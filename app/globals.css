@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fdf7f0;
+  --foreground: #21372c;
+  --color-primary-base: #1b5b45;
+  --color-secondary-base: #f5b700;
+  --color-accent-base: #f8e5a6;
+  --color-muted-base: #e6ded0;
+  --color-border-base: #d9d2c6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--color-primary-base);
+  --color-secondary: var(--color-secondary-base);
+  --color-accent: var(--color-accent-base);
+  --color-muted: var(--color-muted-base);
+  --color-border: var(--color-border-base);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-playfair);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+.heading-font {
+  font-family: var(--font-playfair), "Times New Roman", serif;
+}
+
+.text-shadow-soft {
+  text-shadow: 0 6px 18px rgba(27, 91, 69, 0.18);
+}
+
+.card-shadow {
+  box-shadow: 0 16px 40px rgba(20, 63, 48, 0.12);
+}
