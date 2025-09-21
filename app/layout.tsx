@@ -1,22 +1,39 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { DM_Sans, Poppins } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
+const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Angels Haven for Paws | Save, Sponsor, Adopt",
+  title: "Angels Haven for Paws | Sponsor a Turkish Rescue Dog",
   description:
-    "Support Tülay's mission rescuing street dogs in Türkiye and helping them reach loving homes across the UK.",
+    "Support Tülay's Angels Haven for Paws to rescue, rehabilitate, and match Turkish street dogs with loving UK homes.",
+  metadataBase: new URL("https://angels-haven.vercel.app"),
+  openGraph: {
+    title: "Help a Turkish Rescue Dog Reach a Safe Home",
+    description:
+      "Your monthly gift funds rescue, vet care, and adoption journeys from Türkiye to the UK.",
+    url: "https://angels-haven.vercel.app",
+    siteName: "Angels Haven for Paws",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Angels Haven for Paws",
+    description:
+      "Join the mission to move rescued Turkish dogs from the street to the sofa in 60 days.",
+  },
 };
 
 export default function RootLayout({
@@ -27,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${playfair.variable} bg-background text-foreground antialiased`}
+        className={`${dmSans.variable} ${poppins.variable} bg-background text-foreground antialiased`}
       >
         {children}
       </body>
