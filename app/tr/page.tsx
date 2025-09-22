@@ -2,211 +2,172 @@
 
 import { Landing, type LandingContent } from "../page";
 
+const CTA_PRIMARY = "https://www.paypal.com/donate";
+const CTA_REPORT = "https://example.com/angels-haven-transparency.pdf";
+const CTA_COMMUNITY = "https://www.facebook.com";
+
 const TR_CONTENT: LandingContent = {
-  brandName: "Angels Haven for Paws",
-  navLinks: [
-    { href: "#usp", label: "Neden £1" },
-    { href: "#how", label: "Nasıl işler" },
-    { href: "#bento", label: "Etki sistemi" },
-    { href: "#stories", label: "Kurtarma hikayeleri" },
-    { href: "#faq", label: "SSS" },
-  ],
-  navDonateLabel: "£1 Bağışla",
   hero: {
     eyebrow: "Angels Haven • Birleşik Krallık ↔ Türkiye",
-    headline: "Her Pati Değerli — £1 Bugün Bir Köpeği Doyurur",
-    subheadline:
-      "Mikro bağışlar her ay iki ton mamayı taşıyor, acil tedavileri finanse ediyor ve kurtarılan köpekleri güvenli yuvalara uçuruyor.",
-    primaryCta: "Şimdi £1 Bağışla",
-    secondaryCta: "Akışı gör",
-    secondaryHref: "#how",
-    proof: "2.146 bağışçı geçen ay 1.842 öğün sağladı · 5 dakikadan kısa günlük özet",
-    trust: "Stripe & PayPal • Apple / Google Pay • Kart verisi saklamıyoruz",
+    headline: "£1 = Bir Öğün. Bugün Bir Hayatı Değiştir.",
+    subheadline: "Mikro bağışlar mamayı, acil tedaviyi ve kurtarılan patilerin Birleşik Krallık’taki güvenli yuvalara uçuşunu finanse eder.",
+    summary: "Aylık şeffaflık • Tek dokunuşla güvenli ödeme",
+    ctaLabel: "£1 Bugün Besler",
+    donateHref: CTA_PRIMARY,
+    donateAmounts: [1, 8, 25, 55],
+    stats: {
+      label: "Bu ay dağıtılan öğün",
+      value: 4186,
+      suffix: "",
+    },
+    social: [
+      { label: "Instagram", href: "https://instagram.com" },
+      { label: "YouTube", href: "https://youtube.com" },
+      { label: "LinkedIn", href: "https://linkedin.com" },
+    ],
+    media: {
+      poster: "/images/hero-poster.avif",
+      video: "/videos/hero-loop.mp4",
+      alt: "Bir gönüllünün etrafında toplanmış kurtarılan köpekler",
+    },
   },
-  heroStats: [
-    { label: "Bu ay taşınan mama", current: 2000, suffix: " kg" },
-    { label: "Foster / rehabilitasyondaki köpek", current: 38 },
-    { label: "Finanse edilen acil vaka", current: 12 },
+  usp: [
+    "£1 = Bir Öğün",
+    "Aylık Şeffaflık",
+    "Tek Dokunuşla Güvenli Ödeme",
+    "UK ↔ TR Operasyonları",
   ],
-  usp: {
-    heading: {
-      eyebrow: "Dönüşüm odaklı",
-      title: "Amiral gemisi hareket dili, radikal şeffaflık, tek CTA",
-      copy: "Her öğe bağışçıyı akışta tutup bir köpeği doyurana kadar yönlendiriyor.",
-      align: "left",
+  steps: [
+    {
+      id: "choose",
+      badge: "Adım 01",
+      title: "Tutarını seç",
+      copy: "£1 ile başla ya da istediğin tutarı gir. Canlı sayaç bağışınla birlikte anında güncellenir.",
+      media: {
+        poster: "/images/step-choose.avif",
+        video: "/videos/step-choose.mp4",
+        alt: "Bağış seçici arayüzü",
+      },
     },
-    items: [
-      {
-        id: "instant-proof",
-        label: "Anında kanıt",
-        detail: "Canlı sayaç, makbuzlar ve reels £1'iniz ulaştığı anda güncellenir.",
+    {
+      id: "pay",
+      badge: "Adım 02",
+      title: "Güvenle öde",
+      copy: "Apple Pay, Google Pay, Stripe ve PayPal tek sayfada birleşir—hesap açmadan bağışı tamamlarsın.",
+      media: {
+        poster: "/images/step-pay.avif",
+        video: "/videos/step-pay.mp4",
+        alt: "Ödeme onay ekranı",
       },
-      {
-        id: "secure-checkout",
-        label: "Sürtünmesiz ödeme",
-        detail: "Apple Pay, Google Pay, Stripe ve PayPal tek dokunuşta, TLS 1.3 ile şifreli.",
-      },
-      {
-        id: "always-on",
-        label: "Kesintisiz şeffaflık",
-        detail: "7/24 operasyon akışı; GPS logları, veteriner raporları ve bağış dağılımlarını gösterir.",
-      },
-    ],
-  },
-  howItWorks: {
-    heading: {
-      eyebrow: "Nasıl işler",
-      title: "Kaydırma tetiklemeleri seni dokunuştan sallanan kuyruğa taşıyor",
-      copy: "Üç sinematik adım bağış yaptıktan sonra neler olduğunu gösterir.",
     },
-    clips: [
-      {
-        id: "select",
-        label: "Adım 01",
-        title: "£1 seç veya tutarı ayarla",
-        description: "Radyal seçici canlı hedefi anında güncellerken haptik hissi verir.",
-        metric: "Başlama süresi ort.: 6 sn",
-        videoSrc: "/videos/hero-loop.mp4",
-        poster: "/images/hero-rescue.png",
+    {
+      id: "impact",
+      badge: "Adım 03",
+      title: "Etkini izle",
+      copy: "Günlük videolar, veteriner makbuzları ve GPS günlükleri bağışının sokaktan yuvaya yolculuğunu anlatır.",
+      media: {
+        poster: "/images/step-impact.avif",
+        video: "/videos/step-impact.mp4",
+        alt: "Etki panosu",
       },
-      {
-        id: "checkout",
-        label: "Adım 02",
-        title: "Ritmi bozmadan ödeme yap",
-        description: "Apple Pay, Google Pay, Stripe ve PayPal tek sayfada birleşir — tek dokunuşla tamam.",
-        metric: "Tamamlama oranı: %82",
-        videoSrc: "/videos/farm-tour.mp4",
-        poster: "/images/story-before.png",
-      },
-      {
-        id: "follow",
-        label: "Adım 03",
-        title: "Etki akışını takip et",
-        description: "Günlük reels, veteriner makbuzları ve GPS ısı haritaları destek olduğun köpeğin yolculuğunu anlatır.",
-        metric: "Saat başı güncellenir",
-        videoSrc: "/videos/hero-loop.mp4",
-        poster: "/images/story-after.png",
-      },
-    ],
-  },
-  bento: {
-    heading: {
-      eyebrow: "Etki sistemi",
-      title: "Operasyon, hikâye ve topluluk tek ritimde",
-      copy: "Dönüşüm hazır sıcak bir deneyim için lansman sitesi cilasını ödünç aldık.",
     },
-    tiles: [
-      {
-        id: "meals",
-        badge: "Operasyon",
-        title: "Ayda 2 ton mama",
-        copy: "Fethiye, Dalyan ve İzmir'deki barınaklara her 14 günde rotalanan sevkiyatlar ulaşıyor.",
-        metric: "Rotalar GPS ile doğrulanır",
-        tone: "light",
+  ],
+  stories: [
+    {
+      id: "mila",
+      title: "Mila • 14 günde sokaktan kanepeye",
+      copy: "Fethiye’de market önünde bulundu. Mikro bağışlar mamayı, aşıları ve Londra uçuşunu karşıladı.",
+      stat: "14. Gün • Foster kanepesinde",
+      media: {
+        before: { poster: "/images/story-before.png", alt: "Mila kurtarma öncesi" },
+        after: { poster: "/images/story-mila.avif", alt: "Mila yeni yuvasında" },
+        clip: { poster: "/images/story-mila.avif", video: "/videos/story-mila.mp4", alt: "Mila video klibi" },
       },
-      {
-        id: "response",
-        badge: "Acil",
-        title: "< 6 saatte yanıt",
-        copy: "Uyarılar, veteriner bakımını ortalama altı saatin altında açan ops liderine düşer.",
-        metric: "Finanse edilen vaka: 12",
-        tone: "dark",
-      },
-      {
-        id: "flights",
-        badge: "Ulaşım",
-        title: "21 günde uçuşa hazır",
-        copy: "Mikro bağışlar aşılardan uçuş biletine kadar tüm masrafları karşılar; köpekler hızla yeni yuvaya varır.",
-        metric: "Uçuş maliyeti ort. £420",
-        tone: "light",
-      },
-      {
-        id: "community",
-        badge: "Topluluk",
-        title: "Canlı bağışçı kulübü",
-        copy: "Özel etki akışı, hareketli özetler ve gönüllü çağrıları destekçileri hikâyeye dahil eder.",
-        metric: "2.146 aktif bağışçı",
-        tone: "light",
-      },
-    ],
-  },
-  stories: {
-    heading: {
-      eyebrow: "Kurtarma hikayeleri",
-      title: "Mikro bağışlar büyük dönüşümler yaratıyor",
-      copy: "Destekçilerin tekrar tekrar izlediği bölümleri kaydır.",
+      ctaLabel: "Daha fazla kurtarmayı fonla",
+      ctaHref: CTA_PRIMARY,
     },
-    cards: [
-      {
-        id: "mila",
-        title: "Mila · Market sokağından Londra kanepesine",
-        excerpt:
-          "Fethiye'de bir market önünde titrerken bulundu. £1 bağışlar aşıları, beslenmeyi ve 14 günde Londra uçuşunu finanse etti.",
-        stat: "14. gün: Mila foster kanepesinde",
-        image: "/images/story-after.png",
-        alt: "Mila kurtarma sonrası dinlenirken",
+    {
+      id: "duman",
+      title: "Duman • Acil tedaviden sahil koşularına",
+      copy: "Antalya’da trafik kazası sonrası topluluk ameliyatı, rehabilitasyonu ve Brighton yolculuğunu finanse etti.",
+      stat: "28. Gün • Sahiplendirmeye hazır",
+      media: {
+        before: { poster: "/images/story-before.png", alt: "Duman tedavi öncesi" },
+        after: { poster: "/images/story-duman.avif", alt: "Duman iyileştikten sonra" },
+        clip: { poster: "/images/story-duman.avif", video: "/videos/story-duman.mp4", alt: "Duman video klibi" },
       },
-      {
-        id: "atlas",
-        title: "Atlas · Acil ameliyattan sahil koşularına",
-        excerpt:
-          "Antalya'da araba çarpması sonrası topluluk ameliyat, hidroterapi ve Brighton'a taşınmayı finanse etti — şimdi kıyı koşularında.",
-        stat: "28. gün: Atlas sahiplendirmeye hazır",
-        image: "/images/story-before.png",
-        alt: "Atlas iyileşme sürecinde mutlu",
-      },
-    ],
-  },
-  faq: {
-    heading: {
-      eyebrow: "SSS",
-      title: "Bağıştan önce soracağın her şey",
-      copy: "Burada yoksa birkaç saat içinde Loom veya WhatsApp'tayız.",
+      ctaLabel: "Bir öğün daha gönder",
+      ctaHref: CTA_PRIMARY,
     },
-    items: [
-      {
-        question: "£1'in nereye gittiğini gerçekten görüyor muyum?",
-        answer:
-          "Evet. Her bağış yemek sayacı, veteriner makbuzu ve günlük etki videosunda anında görünür.",
-      },
-      {
-        question: "Ödeme güvenli mi?",
-        answer:
-          "Stripe ve PayPal'ı TLS 1.3, Apple Pay, Google Pay ve Fraud Radar ile kullanıyoruz — kart verisi sunucularımıza hiç dokunmuyor.",
-      },
-      {
-        question: "Düzenli bağışı durdurabilir miyim?",
-        answer:
-          "Tabii ki. Makbuzundaki bağlantıdan anında durdurabilir veya erteleyebilirsin; form yok, bekleme yok.",
-      },
-      {
-        question: "Kurtarmalar ne kadar hızlı gerçekleşiyor?",
-        answer:
-          "Acil vakalar uyarıdan finanse edilen tedaviye ortalama altı saatin altında geçiyor; her adım zaman çizelgesinde paylaşılır.",
-      },
-      {
-        question: "Vergi için makbuz alacak mıyım?",
-        answer:
-          "HMRC uyumlu özetler otomatik olarak e-postana düşer ve aylık döküm için kayıt tutar.",
-      },
-      {
-        question: "Bağıştan sonra ne olur?",
-        answer:
-          "Özel etki akışımıza katılır, perde arkası içeriklere erişir ve istersen gönüllü uçuşlara kayıt olursun.",
-      },
-    ],
-  },
+  ],
+  bento: [
+    {
+      id: "meals",
+      eyebrow: "Mama",
+      title: "Ayda 2 ton mama",
+      copy: "Fethiye, Dalyan ve İzmir barınaklarına her 14 günde GPS doğrulamalı sevkiyat yapılır.",
+      ctaLabel: "Rota kayıtlarını gör",
+      href: CTA_REPORT,
+    },
+    {
+      id: "emergency",
+      eyebrow: "Acil",
+      title: "< 6 saatte yanıt",
+      copy: "Uyarılar, veteriner bakımını ortalama altı saatin altında açan ops liderine düşer.",
+      ctaLabel: "Makbuzları incele",
+      href: CTA_REPORT,
+    },
+    {
+      id: "sponsor",
+      eyebrow: "Sponsor",
+      title: "Bir pati sponsorluğu",
+      copy: "Düzenli bağışçılar uçuş ve foster maliyetlerini karşılar; her ay bir köpeğe yolculuk hediye et.",
+      ctaLabel: "Bugün sponsor ol",
+      href: CTA_PRIMARY,
+    },
+    {
+      id: "report",
+      eyebrow: "Rapor",
+      title: "Şeffaflık raporu",
+      copy: "Günlük operasyon akışı, aylık raporlar ve uyum dosyaları gerçek zamanlı denetim sağlar.",
+      ctaLabel: "Raporu indir",
+      href: CTA_REPORT,
+    },
+  ],
+  faq: [
+    {
+      question: "£1’in nereye gittiğini gerçekten görüyor muyum?",
+      answer: "Evet. Her bağış yemek sayacı, veteriner makbuzu ve günlük etki videosunda anında görünür.",
+    },
+    {
+      question: "Ödeme güvenli mi?",
+      answer: "Stripe ve PayPal’ı TLS 1.3, Apple Pay, Google Pay ve Radar koruması ile kullanıyoruz—kart verisi sunucularımıza girmez.",
+    },
+    {
+      question: "Düzenli bağışı durdurabilir miyim?",
+      answer: "Makbuzundaki bağlantıdan tek dokunuşla durdurabilir ya da erteleyebilirsin; bekleme yok.",
+    },
+    {
+      question: "Kurtarma ne kadar hızlı gerçekleşiyor?",
+      answer: "Acil vakalar ortalama altı saatin altında fonlanır ve zaman çizelgesi adım adım paylaşılır.",
+    },
+    {
+      question: "Vergi için makbuz alacak mıyım?",
+      answer: "HMRC uyumlu makbuzlar anında e-postana düşer ve aylık döküm oluşturur.",
+    },
+    {
+      question: "Bağıştan sonra ne olur?",
+      answer: "Özel etki akışına katılır, perde arkası içerikleri izler ve istersen uçuş gönüllüsü olursun.",
+    },
+  ],
   final: {
-    eyebrow: "Bir sonraki kurtarmayı fonlamaya hazır mısın?",
-    headline: "Bugün bir köpeği daha güvende tut",
-    body: "£1'lik zincir mamasını, tedavisini ve yolculuğunu tetikler. Her ay 2 ton yardımı hareket ettiren bağışçılara katıl.",
-    button: "Şimdi £1 Bağışla",
-    secondary: "Topluluk akışına git",
-  },
-  sticky: {
-    headline: "£1 bugün bir köpeği doyurur",
-    subheadline: "Anında makbuz · Şifreli ödeme",
-    button: "Bağışla",
+    eyebrow: "Bir sonraki kurtarmaya hazır mısın?",
+    headline: "Bugün bir köpeği daha güvende tut.",
+    body: "£1; mamayı, tedaviyi ve yolculuğu tetikler. Her ay 2 ton yardımı hareket ettiren bağışçılara katıl.",
+    ctaLabel: "£1 Bugün Besler",
+    secondaryLabel: "Topluluk akışına git",
+    secondaryHref: CTA_COMMUNITY,
+    donateHref: CTA_PRIMARY,
   },
 };
 

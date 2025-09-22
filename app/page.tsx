@@ -3,133 +3,172 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useSpring } from "framer-motion";
+import Lenis from "lenis";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Lenis from "lenis";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-type StatMetric = {
-  label: string;
-  current: number;
-  goal?: number;
-  suffix?: string;
-  prefix?: string;
-};
-
-type NavLink = {
-  href: string;
-  label: string;
-};
-
-type HeroCopy = {
-  eyebrow: string;
-  headline: string;
-  subheadline: string;
-  primaryCta: string;
-  secondaryCta: string;
-  secondaryHref: string;
-  proof: string;
-  trust: string;
-};
-
-type USPItem = {
-  id: string;
-  label: string;
-  detail: string;
-};
-
-type VideoClip = {
-  id: string;
-  label: string;
-  title: string;
-  description: string;
-  metric: string;
-  videoSrc: string;
+type MediaAsset = {
   poster: string;
-};
-
-type BentoTile = {
-  id: string;
-  badge?: string;
-  title: string;
-  copy: string;
-  metric?: string;
-  tone: "light" | "dark";
-};
-
-type StoryCard = {
-  id: string;
-  title: string;
-  excerpt: string;
-  stat: string;
-  image: string;
+  video?: string;
   alt: string;
 };
 
-type FAQ = {
+type StatMetric = {
+  label: string;
+  value: number;
+  suffix?: string;
+};
+
+type HeroContent = {
+  eyebrow: string;
+  headline: string;
+  subheadline: string;
+  summary: string;
+  ctaLabel: string;
+  donateHref: string;
+  donateAmounts: number[];
+  stats: StatMetric;
+  social: { label: string; href: string }[];
+  media: MediaAsset;
+};
+
+type StepItem = {
+  id: string;
+  badge: string;
+  title: string;
+  copy: string;
+  media: MediaAsset;
+};
+
+type StoryItem = {
+  id: string;
+  title: string;
+  copy: string;
+  stat: string;
+  media: {
+    before: MediaAsset;
+    after: MediaAsset;
+    clip?: MediaAsset;
+  };
+  ctaLabel: string;
+  ctaHref: string;
+};
+
+type BentoItem = {
+  id: string;
+  eyebrow: string;
+  title: string;
+  copy: string;
+  ctaLabel: string;
+  href: string;
+};
+
+type FAQItem = {
   question: string;
   answer: string;
 };
 
-type FinalCTACopy = {
-  eyebrow: string;
-  headline: string;
-  body: string;
-  button: string;
-  secondary: string;
-};
-
-type StickyCopy = {
-  headline: string;
-  subheadline: string;
-  button: string;
-};
-
-type SectionCopy = {
-  eyebrow?: string;
-  title: string;
-  copy?: string;
-  align?: "left" | "center";
-};
-
 export type LandingContent = {
-  brandName: string;
-  navLinks: NavLink[];
-  navDonateLabel: string;
-  hero: HeroCopy;
-  heroStats: StatMetric[];
-  usp: {
-    heading: SectionCopy;
-    items: USPItem[];
+  hero: HeroContent;
+  usp: string[];
+  steps: StepItem[];
+  stories: StoryItem[];
+  bento: BentoItem[];
+  faq: FAQItem[];
+  final: {
+    eyebrow: string;
+    headline: string;
+    body: string;
+    ctaLabel: string;
+    secondaryLabel: string;
+    secondaryHref: string;
+    donateHref: string;
   };
-  howItWorks: {
-    heading: SectionCopy;
-    clips: VideoClip[];
-  };
-  bento: {
-    heading: SectionCopy;
-    tiles: BentoTile[];
-  };
-  stories: {
-    heading: SectionCopy;
-    cards: StoryCard[];
-  };
-  faq: {
-    heading: SectionCopy;
-    items: FAQ[];
-  };
-  final: FinalCTACopy;
-  sticky: StickyCopy;
 };
 
-function useSmoothScroll() {
+const CTA_PRIMARY = "https://www.paypal.com/donate";
+const CTA_REPORT = "https://example.com/angels-haven-transparency.pdf";
+const CTA_COMMUNITY = "https://www.facebook.com";
+
+const RAIL_SECTIONS = [
+  { id: "hero", label: "Intro" },
+  { id: "how", label: "Flow" },
+  { id: "stories", label: "Stories" },
+  { id: "impact", label: "Impact" },
+] as const;
+
+type RailSectionId = (typeof RAIL_SECTIONS)[number]["id"];
+
+function trackEvent(event: string, payload: Record<string, unknown> = {}) {
+  if (typeof window === "undefined") return;
+  const data = { event, ...payload };
+  const layer = (window as unknown as { dataLayer?: unknown[] }).dataLayer;
+  if (Array.isArray(layer)) {
+    layer.push(data);
+  } else {
+    window.dispatchEvent(new CustomEvent(event, { detail: payload }));
+  }
+}
+
+function usePrefersReducedMotion() {
+  const [prefers, setPrefers] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefers(query.matches);
+    const handler = (event: MediaQueryListEvent) => setPrefers(event.matches);
+    if (typeof query.addEventListener === "function") {
+      query.addEventListener("change", handler);
+    } else {
+      query.addListener(handler);
+    }
+    return () => {
+      if (typeof query.removeEventListener === "function") {
+        query.removeEventListener("change", handler);
+      } else {
+        query.removeListener(handler);
+      }
+    };
+  }, []);
+  return prefers;
+}
+
+function usePointerShift(disabled: boolean) {
+  useEffect(() => {
+    if (typeof window === "undefined" || disabled) return;
+    let raf = 0;
+    const setVars = (x: number, y: number) => {
+      document.documentElement.style.setProperty("--pointer-x", x.toFixed(3));
+      document.documentElement.style.setProperty("--pointer-y", y.toFixed(3));
+    };
+    const handle = (event: PointerEvent) => {
+      const { innerWidth, innerHeight } = window;
+      const x = (event.clientX / innerWidth - 0.5) * 2;
+      const y = (event.clientY / innerHeight - 0.5) * 2;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setVars(x, y));
+    };
+    window.addEventListener("pointermove", handle, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("pointermove", handle);
+      document.documentElement.style.setProperty("--pointer-x", "0");
+      document.documentElement.style.setProperty("--pointer-y", "0");
+    };
+  }, [disabled]);
+}
+
+function useSmoothScroll(disabled: boolean) {
+  useEffect(() => {
+    if (typeof window === "undefined" || disabled) return;
 
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (mediaQuery.matches) return;
+
     let lenis: Lenis | null = null;
     let rafId: number | null = null;
 
@@ -138,301 +177,43 @@ function useSmoothScroll() {
 
     const startLenis = () => {
       if (lenis) return;
-
       lenis = new Lenis({
         duration: 1.05,
         lerp: 0.08,
         smoothWheel: true,
-        syncTouch: false,
       });
-
       const raf = (time: number) => {
         lenis?.raf(time);
         rafId = requestAnimationFrame(raf);
       };
-
       rafId = requestAnimationFrame(raf);
       lenis.on("scroll", handleScrollUpdate);
-      window.addEventListener("resize", handleResize);
     };
 
     const stopLenis = () => {
       if (!lenis) return;
-
       lenis.off("scroll", handleScrollUpdate);
       lenis.destroy();
       lenis = null;
-
-      if (rafId !== null) {
+      if (rafId) {
         cancelAnimationFrame(rafId);
         rafId = null;
       }
-
-      window.removeEventListener("resize", handleResize);
     };
 
-    if (!mediaQuery.matches) {
-      startLenis();
-    }
-
-    const handlePreferenceChange = (event: MediaQueryListEvent) => {
-      if (event.matches) {
-        stopLenis();
-      } else {
-        startLenis();
-        requestAnimationFrame(() => ScrollTrigger.refresh());
-      }
-    };
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", handlePreferenceChange);
-    } else {
-      mediaQuery.addListener(handlePreferenceChange);
-    }
+    startLenis();
+    window.addEventListener("resize", handleResize, { passive: true });
 
     return () => {
-      if (typeof mediaQuery.removeEventListener === "function") {
-        mediaQuery.removeEventListener("change", handlePreferenceChange);
-      } else {
-        mediaQuery.removeListener(handlePreferenceChange);
-      }
+      window.removeEventListener("resize", handleResize);
       stopLenis();
     };
-  }, []);
+  }, [disabled]);
 }
 
-const CTA_PRIMARY = "https://www.paypal.com/donate";
-const CTA_FACEBOOK = "https://www.facebook.com";
-
-const EN_CONTENT: LandingContent = {
-  brandName: "Angels Haven for Paws",
-  navLinks: [
-    { href: "#usp", label: "Why £1" },
-    { href: "#how", label: "How it works" },
-    { href: "#bento", label: "Impact system" },
-    { href: "#stories", label: "Rescue stories" },
-    { href: "#faq", label: "FAQ" },
-  ],
-  navDonateLabel: "Donate £1",
-  hero: {
-    eyebrow: "Angels Haven • UK ↔ TR",
-    headline: "Every Paw Matters — £1 Feeds a Dog Today",
-    subheadline:
-      "Micro-donations move two tonnes of food each month, fund emergency care, and fly rescues to safe foster homes across Turkey and the UK.",
-    primaryCta: "Donate £1 Now",
-    secondaryCta: "See the rescue flow",
-    secondaryHref: "#how",
-    proof: "2,146 donors funded 1,842 meals last month · Daily impact recap in under 5 minutes",
-    trust: "Stripe & PayPal • Apple / Google Pay • We never store card details",
-  },
-  heroStats: [
-    { label: "Food moved this month", current: 2000, suffix: " kg" },
-    { label: "Dogs in foster & rehab", current: 38 },
-    { label: "Emergency treatments funded", current: 12 },
-  ],
-  usp: {
-    heading: {
-      eyebrow: "Designed to convert",
-      title: "Flagship motion, radical transparency, one CTA",
-      copy: "Every element is tuned to keep donors in the flow until a dog is fed.",
-      align: "left",
-    },
-    items: [
-      {
-        id: "instant-proof",
-        label: "Instant proof",
-        detail: "Live ticker, receipts, and reels update the moment your £1 arrives.",
-      },
-      {
-        id: "secure-checkout",
-        label: "Frictionless checkout",
-        detail: "Apple Pay, Google Pay, Stripe, and PayPal 1-click with TLS 1.3.",
-      },
-      {
-        id: "always-on",
-        label: "Always-on transparency",
-        detail: "24/7 ops feed with GPS logs, vet reports, and donation allocation.",
-      },
-    ],
-  },
-  howItWorks: {
-    heading: {
-      eyebrow: "How it works",
-      title: "Scroll-triggered scenes walk you from tap to wagging tail",
-      copy: "Three cinematic beats show exactly what happens after you donate.",
-    },
-    clips: [
-      {
-        id: "select",
-        label: "Step 01",
-        title: "Choose £1 or set your amount",
-        description: "Radial selector pulses with haptic-style feedback as the live goal shifts in real time.",
-        metric: "Avg. time to start: 6s",
-        videoSrc: "/videos/hero-loop.mp4",
-        poster: "/images/hero-rescue.png",
-      },
-      {
-        id: "checkout",
-        label: "Step 02",
-        title: "Checkout without breaking stride",
-        description: "Apple Pay, Google Pay, Stripe, and PayPal are wired into a single, encrypted sheet — one tap and you're done.",
-        metric: "Completion rate: 82%",
-        videoSrc: "/videos/farm-tour.mp4",
-        poster: "/images/story-before.png",
-      },
-      {
-        id: "follow",
-        label: "Step 03",
-        title: "Follow the impact feed",
-        description: "Daily reels, vet receipts, and GPS heatmaps narrate the dog you just helped from street to foster home.",
-        metric: "Updates drop hourly",
-        videoSrc: "/videos/hero-loop.mp4",
-        poster: "/images/story-after.png",
-      },
-    ],
-  },
-  bento: {
-    heading: {
-      eyebrow: "Impact system",
-      title: "Ops, storytelling, and community in one rhythm",
-      copy: "We borrowed launch-site polish to keep the mission warm and conversion-primed.",
-    },
-    tiles: [
-      {
-        id: "meals",
-        badge: "Ops",
-        title: "2 tonnes of food monthly",
-        copy: "Logistics partners across Fethiye, Dalyan, and Izmir receive routed deliveries every 14 days.",
-        metric: "Routes verified via GPS",
-        tone: "light",
-      },
-      {
-        id: "response",
-        badge: "Emergency",
-        title: "< 6 hr response time",
-        copy: "Alerts funnel to an ops lead who unlocks vet care, treatment, and medication in under six hours on average.",
-        metric: "Funded cases: 12 this month",
-        tone: "dark",
-      },
-      {
-        id: "flights",
-        badge: "Transport",
-        title: "Flight-ready in 21 days",
-        copy: "Micro-gifts stack to cover vaccination, paperwork, and transport, moving dogs to UK foster sofas fast.",
-        metric: "Avg. flight cost £420",
-        tone: "light",
-      },
-      {
-        id: "community",
-        badge: "Community",
-        title: "Live donor lounge",
-        copy: "Private impact feed, motion recaps, and volunteer callouts keep supporters close to the rescue journey.",
-        metric: "2,146 active donors",
-        tone: "light",
-      },
-    ],
-  },
-  stories: {
-    heading: {
-      eyebrow: "Rescue stories",
-      title: "Micro-donations turning into macro rescues",
-      copy: "Scroll the chapters donors replay the most.",
-    },
-    cards: [
-      {
-        id: "mila",
-        title: "Mila · Market street to London sofa",
-        excerpt:
-          "Found trembling outside a supermarket in Fethiye. £1 gifts funded vaccinations, nourishment, and a flight to London within 14 days.",
-        stat: "Day 14: Mila asleep on a foster sofa",
-        image: "/images/story-after.png",
-        alt: "Mila resting on a sofa after rescue",
-      },
-      {
-        id: "atlas",
-        title: "Atlas · Emergency surgery to trail runs",
-        excerpt:
-          "Hit by a car near Antalya. Community donors paid for surgery, hydrotherapy, and relocation to Brighton — now he runs coastal trails.",
-        stat: "Day 28: Atlas cleared for adoption",
-        image: "/images/story-before.png",
-        alt: "Atlas recovering happily",
-      },
-    ],
-  },
-  faq: {
-    heading: {
-      eyebrow: "FAQ",
-      title: "Everything you’d ask before donating",
-      copy: "If it isn’t covered here, we jump on a Loom or WhatsApp call within hours.",
-    },
-    items: [
-      {
-        question: "Do I really see where £1 goes?",
-        answer:
-          "Yes. Every donation triggers a live log update with meal counts, vet receipts, and a highlight in the daily impact reel.",
-      },
-      {
-        question: "Is checkout encrypted?",
-        answer:
-          "We integrate Stripe and PayPal with TLS 1.3, Apple Pay, Google Pay, and Fraud Radar — no card details ever touch our servers.",
-      },
-      {
-        question: "Can I pause or cancel recurring?",
-        answer:
-          "Absolutely. Manage recurring gifts instantly via your receipt — no forms, no wait time. One click to pause.",
-      },
-      {
-        question: "How fast do rescues happen?",
-        answer:
-          "Emergency cases move from alert to funded treatment in under six hours on average, with timeline updates as each step completes.",
-      },
-      {
-        question: "Will there be a receipt for tax?",
-        answer:
-          "Receipts hit your inbox instantly with HMRC-compliant summaries and a running ledger for monthly statements.",
-      },
-      {
-        question: "What’s next after donating?",
-        answer:
-          "You join our private impact feed, unlock behind-the-scenes footage, and can opt in for meet-ups or flight volunteer missions.",
-      },
-    ],
-  },
-  final: {
-    eyebrow: "Ready to fund the next rescue?",
-    headline: "Make today safer for one more dog",
-    body: "It takes £1 to trigger the chain: food on the ground, treatment underway, transport booked. Join the donors powering 2 tonnes of aid monthly.",
-    button: "Donate £1 Now",
-    secondary: "Visit the community feed",
-  },
-  sticky: {
-    headline: "£1 feeds a dog today",
-    subheadline: "Instant receipt · Encrypted checkout",
-    button: "Donate",
-  },
-};
-
-function LogoMark({ className = "h-9 w-9" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
-      <path
-        d="M48.5 12c-6 0-11 3.8-12.5 9C34.5 15.8 29.5 12 23.5 12 14 12 8 18 8 26c0 16 24 30 24 30s24-14 24-30c0-8-6-14-7.5-14z"
-        fill="#1e6b55"
-      />
-      <circle cx="32" cy="36" r="10" fill="#ffb34b" />
-      <circle cx="22" cy="32" r="4.4" fill="#ffb34b" />
-      <circle cx="42" cy="32" r="4.4" fill="#ffb34b" />
-      <circle cx="26.5" cy="23.5" r="4.1" fill="#ffb34b" />
-      <circle cx="37.5" cy="23.5" r="4.1" fill="#ffb34b" />
-    </svg>
-  );
-}
-
-function AnimatedCounter({ value, suffix, goal, prefix }: { value: number; suffix?: string; goal?: number; prefix?: string }) {
+function AnimatedCounter({ value, suffix }: { value: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement | null>(null);
-  const spring = useSpring(0, { stiffness: 80, damping: 20 });
-  const formattedSuffix = suffix ?? "";
-  const formattedPrefix = prefix ?? "";
+  const spring = useSpring(0, { stiffness: 90, damping: 20 });
 
   useEffect(() => {
     spring.set(value);
@@ -441,613 +222,878 @@ function AnimatedCounter({ value, suffix, goal, prefix }: { value: number; suffi
   useEffect(() => {
     const unsubscribe = spring.on("change", (latest) => {
       if (!ref.current) return;
-      const rounded = Math.round(latest);
-      const number = rounded.toLocaleString();
-      const usePrefix = formattedPrefix || (formattedSuffix === "£" ? "£" : "");
-      const suffixText = formattedPrefix ? formattedSuffix : formattedSuffix === "£" ? "" : formattedSuffix;
-      ref.current.textContent = `${usePrefix}${number}${suffixText}`;
+      ref.current.textContent = `${Math.round(latest).toLocaleString()}${suffix ?? ""}`;
     });
     return unsubscribe;
-  }, [formattedPrefix, formattedSuffix, spring]);
+  }, [spring, suffix]);
 
-  return (
-    <>
-      <span ref={ref} />
-      {goal !== undefined && goal > 0 && (
-        <span className="ml-1 text-xs text-white/70">/ {goal.toLocaleString()}</span>
-      )}
-    </>
-  );
+  return <span ref={ref} />;
 }
 
-function SectionHeading({ copy }: { copy: SectionCopy }) {
-  const alignClass = copy.align === "left" ? "items-start text-left" : "items-center text-center";
-  return (
-    <div className={`flex max-w-3xl flex-col gap-4 ${alignClass}`}>
-      {copy.eyebrow && (
-        <span className="inline-flex items-center rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-primary">
-          {copy.eyebrow}
-        </span>
-      )}
-      <h2 className="heading-font heading-xl text-ink">{copy.title}</h2>
-      {copy.copy && <p className="text-base text-foreground/75 md:text-lg">{copy.copy}</p>}
-    </div>
-  );
-}
-
-function Navigation({ content }: { content: LandingContent }) {
-  const [isScrolled, setIsScrolled] = useState(false);
+function MagneticButton({ href, children, className, onHover }: { href: string; children: React.ReactNode; className?: string; onHover?: () => void }) {
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const ref = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 16);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    if (prefersReducedMotion) return;
+    const node = ref.current;
+    if (!node) return;
+
+    const handleMove = (event: PointerEvent) => {
+      const rect = node.getBoundingClientRect();
+      const x = event.clientX - rect.left - rect.width / 2;
+      const y = event.clientY - rect.top - rect.height / 2;
+      node.style.transform = `translate(${x * 0.15}px, ${y * 0.18}px)`;
+    };
+
+    const reset = () => {
+      node.style.transform = "translate(0, 0)";
+    };
+
+    node.addEventListener("pointermove", handleMove);
+    node.addEventListener("pointerleave", reset);
+    return () => {
+      node.removeEventListener("pointermove", handleMove);
+      node.removeEventListener("pointerleave", reset);
+    };
+  }, [prefersReducedMotion]);
 
   return (
+    <a
+      ref={ref}
+      href={href}
+      className={`cta-primary inline-flex items-center gap-2 px-8 py-3 text-sm uppercase tracking-[0.32em] ${className ?? ""}`}
+      onMouseEnter={onHover}
+    >
+      {children}
+    </a>
+  );
+}
+
+function Navigation({ content, solid }: { content: LandingContent; solid: boolean }) {
+  return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? "border-b border-ink/10 bg-background/85 backdrop-blur"
-          : "border-b border-transparent bg-transparent"
+      className={`pointer-events-auto fixed inset-x-0 top-0 z-[90] transition-colors duration-300 ${
+        solid ? "bg-[rgba(11,15,13,0.7)] backdrop-blur-md" : "bg-transparent"
       }`}
     >
       <div className="section-shell flex items-center justify-between py-4">
-        <motion.a
-          href="#top"
-          className="group flex items-center gap-3"
-          whileHover={{ scale: 1.01 }}
-          transition={{ type: "spring", stiffness: 220, damping: 18 }}
-        >
-          <motion.div
-            className="gradient-ring flex h-12 w-12 items-center justify-center rounded-full text-white shadow-[0_18px_42px_rgba(13,61,45,0.35)]"
-            initial={{ rotate: 0 }}
-            animate={{ rotate: [0, 4, -4, 0] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <LogoMark className="h-9 w-9" />
-          </motion.div>
-          <span className="heading-font text-lg text-ink group-hover:text-primary">
-            {content.brandName}
+        <a href="#hero" className="flex items-center gap-3 text-sm font-semibold tracking-[0.22em] text-white/80">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-white/5 text-white">
+            AH
           </span>
-        </motion.a>
-        <nav className="hidden items-center gap-8 text-sm font-semibold text-foreground/70 lg:flex">
-          {content.navLinks.map((link) => (
-            <a key={link.href} href={link.href} className="transition hover:text-primary">
-              {link.label}
-            </a>
-          ))}
-        </nav>
-        <div className="hidden items-center gap-4 lg:flex">
-          <a
-            href={CTA_PRIMARY}
-            className="inline-flex items-center justify-center rounded-full bg-secondary px-6 py-2.5 text-sm font-semibold text-ink shadow-sm transition hover:bg-secondary/90"
-          >
-            {content.navDonateLabel}
+          <span className="hidden text-xs uppercase text-white/70 md:inline">Angels Haven</span>
+        </a>
+        <nav className="hidden items-center gap-10 text-sm font-medium text-white/70 md:flex">
+          <a href="#how" className="transition hover:text-white">
+            How it works
           </a>
-        </div>
+          <a href="#stories" className="transition hover:text-white">
+            Rescue stories
+          </a>
+          <a href="#impact" className="transition hover:text-white">
+            Impact
+          </a>
+          <a href="#faq" className="transition hover:text-white">
+            FAQ
+          </a>
+        </nav>
+        <MagneticButton
+          href={content.hero.donateHref}
+          className="hidden md:inline-flex"
+          onHover={() => trackEvent("cta_click_primary", { surface: "nav-hover" })}
+        >
+          £1 Feeds a Dog Today
+        </MagneticButton>
       </div>
     </header>
   );
 }
 
-function AmbientVideo({
-  src,
-  poster,
-  autoStart = true,
-  loop = true,
-  className,
-}: {
-  src: string;
-  poster: string;
-  autoStart?: boolean;
-  loop?: boolean;
-  className?: string;
-}) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [shouldAutoPlay, setShouldAutoPlay] = useState(autoStart);
+function RailIndicators() {
+  const [active, setActive] = useState<RailSectionId>("hero");
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActive(entry.target.id as RailSectionId);
+          }
+        });
+      },
+      { threshold: 0.35 }
+    );
 
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updatePreference = () => {
-      const reduce = mediaQuery.matches;
-      setShouldAutoPlay(!reduce && autoStart);
+    RAIL_SECTIONS.forEach(({ id }) => {
+      const section = document.getElementById(id);
+      if (section) observer.observe(section);
+    });
 
-      const video = videoRef.current;
-      if (!video) return;
-
-      if (reduce || !autoStart) {
-        video.pause();
-      } else {
-        const playPromise = video.play();
-        if (typeof playPromise?.catch === "function") {
-          playPromise.catch(() => {
-            /* Autoplay can be blocked; ignore to keep fallback silent */
-          });
-        }
-      }
-    };
-
-    updatePreference();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", updatePreference);
-    } else {
-      mediaQuery.addListener(updatePreference);
-    }
-
-    return () => {
-      if (typeof mediaQuery.removeEventListener === "function") {
-        mediaQuery.removeEventListener("change", updatePreference);
-      } else {
-        mediaQuery.removeListener(updatePreference);
-      }
-    };
-  }, [autoStart]);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <video
-      ref={videoRef}
-      className={className ?? "absolute inset-0 h-full w-full object-cover"}
-      autoPlay={shouldAutoPlay}
-      loop={shouldAutoPlay && loop}
-      muted
-      playsInline
-      poster={poster}
-    >
-      <source src={src} type="video/mp4" />
-      Your browser does not support the video tag.
-    </video>
+    <div className="fixed right-[3%] top-1/2 z-[70] hidden -translate-y-1/2 flex-col items-center gap-4 lg:flex">
+      {RAIL_SECTIONS.map(({ id, label }) => (
+        <button
+          key={id}
+          type="button"
+          className="group flex flex-col items-center gap-2 text-[0.55rem] uppercase tracking-[0.32em] text-white/40"
+          onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+        >
+          <span className="rail-indicator" data-active={active === id} />
+          <span className={`transition-colors ${active === id ? "text-white/85" : ""}`}>{label}</span>
+        </button>
+      ))}
+    </div>
   );
 }
 
-function Hero({ content }: { content: LandingContent }) {
+function HeroMedia({ media, active, prefersReducedMotion }: { media: MediaAsset; active: boolean; prefersReducedMotion: boolean }) {
+  const shouldPlay = active && !prefersReducedMotion && Boolean(media.video);
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <Image src={media.poster} alt={media.alt} fill priority className={`object-cover transition-opacity duration-700 ${shouldPlay ? "opacity-0" : "opacity-100"}`} />
+      {shouldPlay && media.video && (
+        <video className="absolute inset-0 h-full w-full object-cover" autoPlay muted loop playsInline poster={media.poster}>
+          <source src={media.video} type="video/mp4" />
+        </video>
+      )}
+      <div className="hero-mask" />
+      <div className="hero-glow" data-variant="1" />
+      <div className="hero-glow" data-variant="2" />
+    </div>
+  );
+}
+
+function Hero({ content, prefersReducedMotion }: { content: LandingContent; prefersReducedMotion: boolean }) {
+  const mediaActivatedRef = useRef(prefersReducedMotion);
+  const [videoActive, setVideoActive] = useState(prefersReducedMotion);
   const heroRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const container = heroRef.current;
-    if (!container) return;
-
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let ctx: gsap.Context | null = null;
-
-    const setStaticState = () => {
-      container.querySelectorAll<HTMLElement>('[data-animate=hero-intro]').forEach((node) => {
-        node.style.opacity = "1";
-        node.style.transform = "none";
-      });
-    };
-
-    const clearInlineStyles = () => {
-      container.querySelectorAll<HTMLElement>('[data-animate=hero-intro]').forEach((node) => {
-        node.style.removeProperty("opacity");
-        node.style.removeProperty("transform");
-      });
-    };
-
-    const runIntro = () => {
-      ctx?.revert();
-      ctx = gsap.context(() => {
-        gsap.from("[data-animate=hero-intro]", {
-          y: 36,
-          opacity: 0,
-          stagger: 0.08,
-          duration: 1.15,
-          ease: "power3.out",
-          delay: 0.2,
+    if (!container || prefersReducedMotion || mediaActivatedRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            mediaActivatedRef.current = true;
+            setVideoActive(true);
+            observer.disconnect();
+          }
         });
-      }, container);
-    };
+      },
+      { threshold: 0.45 }
+    );
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [prefersReducedMotion]);
 
-    const applyPreference = (shouldReduce: boolean) => {
-      if (shouldReduce) {
-        if (ctx) {
-          ctx.revert();
-          ctx = null;
-        }
-        setStaticState();
-        return;
-      }
-
-      clearInlineStyles();
-      runIntro();
-    };
-
-    applyPreference(mediaQuery.matches);
-
-    const handleChange = (event: MediaQueryListEvent) => {
-      applyPreference(event.matches);
-    };
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", handleChange);
-    } else {
-      mediaQuery.addListener(handleChange);
+  useEffect(() => {
+    const container = heroRef.current;
+    if (!container) return;
+    if (prefersReducedMotion) {
+      gsap.set(container.querySelectorAll("[data-hero-animate]") as NodeListOf<HTMLElement>, { opacity: 1, y: 0 });
+      return;
     }
+    const ctx = gsap.context(() => {
+      gsap.from("[data-hero-animate]", {
+        y: 36,
+        opacity: 0,
+        stagger: 0.08,
+        duration: 1.1,
+        ease: "power3.out",
+        delay: 0.2,
+      });
+    }, heroRef);
+    return () => ctx.revert();
+  }, [prefersReducedMotion]);
 
-    return () => {
-      if (typeof mediaQuery.removeEventListener === "function") {
-        mediaQuery.removeEventListener("change", handleChange);
-      } else {
-        mediaQuery.removeListener(handleChange);
-      }
-
-      if (ctx) {
-        ctx.revert();
-      }
-    };
-  }, []);
-
-  const hero = content.hero;
+  const { hero } = content;
 
   return (
-    <section
-      id="top"
-      ref={heroRef}
-      className="relative overflow-hidden bg-ink text-white"
-    >
-      <div className="absolute inset-0">
-        <AmbientVideo src="/videos/hero-loop.mp4" poster="/images/hero-rescue.png" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(12,28,20,0.25),transparent_52%)]" />
-        <div className="absolute inset-0 bg-gradient-to-br from-[#062017]/92 via-[#0b2b21]/82 to-[#143d2e]/78" />
-        <div className="pointer-events-none absolute -left-24 top-[-18%] h-[420px] w-[420px] rounded-full bg-secondary/35 blur-3xl" />
-        <div className="pointer-events-none absolute -right-16 bottom-[-20%] h-[520px] w-[520px] rounded-full bg-primary/25 blur-3xl" />
-      </div>
-      <div className="section-shell relative grid min-h-screen items-center gap-16 py-[var(--space-12)] lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="space-y-8">
-          <div className="inline-flex items-center gap-3 rounded-full bg-white/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.32em] text-white/85" data-animate="hero-intro">
-            <span>{hero.eyebrow}</span>
-          </div>
-          <div className="space-y-6">
-            <motion.h1
-              data-animate="hero-intro"
-              className="display-hero max-w-3xl text-white drop-shadow-[0_35px_80px_rgba(0,0,0,0.45)]"
-            >
+    <section id="hero" ref={heroRef} className="hero-surface relative flex min-h-[100dvh] snap-start items-center justify-center overflow-hidden">
+      <HeroMedia media={hero.media} active={videoActive} prefersReducedMotion={prefersReducedMotion} />
+      <div className="section-shell relative z-10 grid gap-12 py-32 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="flex flex-col gap-8">
+          <span data-hero-animate className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+            {hero.eyebrow}
+          </span>
+          <div className="space-y-6 text-white">
+            <h1 data-hero-animate className="display-hero max-w-3xl">
               {hero.headline}
-            </motion.h1>
-            <p className="max-w-2xl text-lg text-white/85" data-animate="hero-intro">
+            </h1>
+            <p data-hero-animate className="max-w-xl text-base text-white/75">
               {hero.subheadline}
             </p>
+            <p data-hero-animate className="text-sm uppercase tracking-[0.35em] text-white/45">
+              {hero.summary}
+            </p>
           </div>
-          <div className="flex flex-wrap items-center gap-4" data-animate="hero-intro">
-            <motion.a
-              href={CTA_PRIMARY}
-              whileHover={{ scale: 1.015, y: -2 }}
-              whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-secondary px-8 py-3 text-base font-semibold text-ink shadow-[0_28px_65px_rgba(255,179,75,0.32)] transition hover:bg-secondary/90"
-            >
-              {hero.primaryCta}
-              <span className="text-lg">→</span>
-            </motion.a>
-            <a
-              href={hero.secondaryHref}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-white/80 underline-offset-4 transition hover:text-white hover:underline"
-            >
-              {hero.secondaryCta}
-            </a>
-          </div>
-          <div className="flex flex-col gap-3 text-sm text-white/70" data-animate="hero-intro">
-            <span className="inline-flex items-center gap-2 text-white/80">
-              <span className="inline-flex h-2 w-2 items-center justify-center rounded-full bg-secondary" />
-              {hero.proof}
-            </span>
-            <span>{hero.trust}</span>
+          <div className="flex flex-col gap-6" data-hero-animate>
+            <div className="flex flex-wrap items-center gap-4">
+              <MagneticButton
+                href={hero.donateHref}
+                onHover={() => trackEvent("cta_click_primary", { surface: "hero-hover" })}
+              >
+                {hero.ctaLabel}
+              </MagneticButton>
+              <button
+                type="button"
+                className="cta-muted text-xs uppercase tracking-[0.3em] text-white/70"
+                onClick={() => {
+                  trackEvent("cta_click_primary", { surface: "hero-secondary" });
+                  window.open(CTA_REPORT, "_blank");
+                }}
+              >
+                Monthly report
+              </button>
+            </div>
+            <DonationAmounts amounts={hero.donateAmounts} href={hero.donateHref} />
           </div>
         </div>
         <motion.aside
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: "easeOut", delay: 0.35 }}
-          className="rounded-[2.5rem] border border-white/15 bg-white/10 p-8 backdrop-blur"
+          transition={{ delay: 0.45, duration: 0.8, ease: "easeOut" }}
+          className="glass-card flex h-fit flex-col gap-5 rounded-[2.4rem] border border-white/15 bg-white/8 p-6 text-white/80"
         >
-          <div className="grid gap-6">
-            {content.heroStats.map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-white/20 bg-white/5 px-5 py-4">
-                <p className="text-xs uppercase tracking-[0.32em] text-white/60">{stat.label}</p>
-                <p className="mt-3 text-3xl font-semibold text-white">
-                  <AnimatedCounter value={stat.current} suffix={stat.suffix} />
-                </p>
-              </div>
-            ))}
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] text-white/60">{hero.stats.label}</p>
+            <p className="mt-2 text-4xl font-semibold text-white">
+              <AnimatedCounter value={hero.stats.value} suffix={hero.stats.suffix} />
+            </p>
           </div>
-          <div className="mt-6 flex items-center gap-3 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-xs text-white/70">
-            <Image src="/images/founder-tulay.png" width={44} height={44} alt="Founder Tülay Demir" className="h-11 w-11 rounded-full object-cover" />
-            <div>
-              <p className="font-semibold text-white/85">Tülay Demir — Founder</p>
-              <p>“We design this funnel like a film premiere because every rescue deserves that energy.”</p>
-            </div>
+          <div className="flex items-center gap-3 text-sm">
+            {hero.social.map((item) => (
+              <a key={item.label} href={item.href} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 transition hover:border-white/35 hover:text-white" aria-label={item.label}>
+                <SocialIcon label={item.label} />
+              </a>
+            ))}
           </div>
         </motion.aside>
       </div>
+      <ScrollPrompt />
     </section>
   );
 }
 
-function USPStrip({ content }: { content: LandingContent }) {
+function ScrollPrompt() {
   return (
-    <section id="usp" className="section-shell py-[var(--space-11)]">
-      <div className="flex flex-col gap-10 md:flex-row md:items-end md:justify-between">
-        <SectionHeading copy={content.usp.heading} />
-        <a
-          href={CTA_PRIMARY}
-          className="inline-flex items-center justify-center self-start rounded-full border border-ink/10 bg-surface px-5 py-2 text-sm font-semibold text-ink shadow-sm transition hover:border-primary/40 hover:text-primary"
-        >
-          Start with £1 →
-        </a>
-      </div>
-      <div className="mt-12 grid gap-6 md:grid-cols-3">
-        {content.usp.items.map((item) => (
-          <motion.article
-            key={item.id}
-            whileHover={{ y: -6 }}
-            transition={{ type: "spring", stiffness: 200, damping: 20 }}
-            className="rounded-3xl border border-ink/10 bg-surface-elevated p-7 shadow-[0_28px_58px_rgba(10,28,20,0.08)]"
-          >
-            <div className="text-xs font-semibold uppercase tracking-[0.3em] text-primary/80">{item.label}</div>
-            <p className="mt-4 text-sm text-foreground/80">{item.detail}</p>
-          </motion.article>
-        ))}
-      </div>
-    </section>
+    <motion.div
+      className="absolute bottom-10 left-1/2 z-20 hidden -translate-x-1/2 flex-col items-center gap-2 text-xs font-semibold uppercase tracking-[0.32em] text-white/50 md:flex"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 1.2, duration: 0.8, ease: "easeOut" }}
+    >
+      Scroll to explore
+      <motion.span
+        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20"
+        animate={{ y: [0, 6, 0] }}
+        transition={{ repeat: Infinity, duration: 2.4 }}
+      >
+        ↓
+      </motion.span>
+    </motion.div>
   );
 }
 
-function HowItWorksSection({ content }: { content: LandingContent }) {
+function DonationAmounts({ amounts, href }: { amounts: number[]; href: string }) {
+  const [active, setActive] = useState<number | null>(amounts[0] ?? null);
   return (
-    <section id="how" className="relative overflow-hidden bg-ink text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(30,107,85,0.18),transparent_60%)]" />
-      <div className="section-shell relative flex flex-col gap-12 py-[var(--space-12)]">
-        <SectionHeading copy={content.howItWorks.heading} />
-        <div className="grid gap-6 lg:grid-cols-3">
-          {content.howItWorks.clips.map((clip, index) => (
-            <motion.div
-              key={clip.id}
-              className="group relative overflow-hidden rounded-[2.2rem] border border-white/12 bg-white/10 p-6 backdrop-blur"
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.08 }}
-            >
-              <div className="aspect-[4/5] overflow-hidden rounded-[1.8rem] border border-white/10">
-                <AmbientVideo
-                  src={clip.videoSrc}
-                  poster={clip.poster}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div className="mt-5 flex flex-col gap-3">
-                <span className="text-xs font-semibold uppercase tracking-[0.32em] text-white/60">{clip.label}</span>
-                <h3 className="heading-font heading-sm text-white">{clip.title}</h3>
-                <p className="text-sm text-white/75">{clip.description}</p>
-                <span className="text-xs font-semibold uppercase tracking-[0.28em] text-secondary/90">{clip.metric}</span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function BentoSection({ content }: { content: LandingContent }) {
-  return (
-    <section id="bento" className="section-shell py-[var(--space-12)]">
-      <SectionHeading copy={content.bento.heading} />
-      <div className="mt-12 grid gap-6 lg:grid-cols-12">
-        {content.bento.tiles.map((tile) => {
-          const isDark = tile.tone === "dark";
-          const colSpan = tile.id === "response" ? "lg:col-span-6" : "lg:col-span-3";
-          const baseClass = isDark
-            ? "bg-ink text-white border-ink/20"
-            : "bg-surface-elevated text-foreground border-ink/10";
-          return (
-            <motion.article
-              key={tile.id}
-              whileHover={{ y: -8 }}
-              transition={{ type: "spring", stiffness: 210, damping: 22 }}
-              className={`flex h-full flex-col justify-between gap-6 rounded-[2.4rem] border p-7 shadow-[0_28px_58px_rgba(10,28,20,0.08)] ${baseClass} ${colSpan}`}
-            >
-              <div className="space-y-4">
-                {tile.badge && (
-                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em] ${isDark ? "bg-white/10 text-secondary" : "bg-primary/10 text-primary"}`}>
-                    {tile.badge}
-                  </span>
-                )}
-                <h3 className={`heading-font heading-sm ${isDark ? "text-white" : "text-ink"}`}>{tile.title}</h3>
-                <p className={`text-sm ${isDark ? "text-white/80" : "text-foreground/80"}`}>{tile.copy}</p>
-              </div>
-              {tile.metric && (
-                <span className={`text-xs font-semibold uppercase tracking-[0.28em] ${isDark ? "text-secondary/90" : "text-primary/80"}`}>
-                  {tile.metric}
-                </span>
-              )}
-            </motion.article>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function StoriesSection({ content }: { content: LandingContent }) {
-  return (
-    <section id="stories" className="relative overflow-hidden bg-ink text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,179,75,0.12),transparent_70%)]" />
-      <div className="section-shell relative flex flex-col gap-12 py-[var(--space-12)]">
-        <SectionHeading copy={content.stories.heading} />
-        <div className="grid gap-6 md:grid-cols-2">
-          {content.stories.cards.map((card, index) => (
-            <motion.article
-              key={card.id}
-              className="rounded-[2.4rem] border border-white/12 bg-white/10 p-6 backdrop-blur"
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.1 }}
-            >
-              <div className="relative mb-5 h-56 overflow-hidden rounded-[1.8rem]">
-                <Image src={card.image} alt={card.alt} fill className="object-cover" />
-              </div>
-              <h3 className="heading-font heading-sm text-white">{card.title}</h3>
-              <p className="mt-3 text-sm text-white/75">{card.excerpt}</p>
-              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.28em] text-secondary/90">{card.stat}</p>
-            </motion.article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FAQAccordion({ items }: { items: FAQ[] }) {
-  const [open, setOpen] = useState<string | null>(items[0]?.question ?? null);
-  return (
-    <div className="mt-12 grid gap-4 md:grid-cols-2">
-      {items.map((faq) => {
-        const isOpen = open === faq.question;
+    <div className="flex flex-wrap gap-2">
+      {amounts.map((amount) => {
+        const isActive = active === amount;
         return (
-          <motion.div
-            key={faq.question}
-            className="rounded-3xl border border-ink/10 bg-surface p-6 shadow-[0_26px_54px_rgba(10,28,20,0.08)]"
-            initial={false}
+          <motion.button
+            key={amount}
+            type="button"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.96 }}
+            className={`inline-flex min-w-[72px] items-center justify-center rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.28em] transition ${
+              isActive ? "bg-white text-[#101815]" : "border border-white/20 text-white/70 hover:text-white"
+            }`}
+            onClick={() => {
+              setActive(amount);
+              trackEvent("donation_amount_select", { amount, currency: "GBP" });
+              window.open(href, "_blank");
+            }}
           >
-            <button
-              type="button"
-              className="flex w-full items-center justify-between gap-6 text-left"
-              onClick={() => setOpen(isOpen ? null : faq.question)}
-            >
-              <span className="heading-font text-lg text-ink">{faq.question}</span>
-              <motion.span
-                animate={{ rotate: isOpen ? 180 : 0 }}
-                transition={{ duration: 0.25 }}
-                className="text-2xl text-primary"
-              >
-                ⌄
-              </motion.span>
-            </button>
-            <AnimatePresence initial={false}>
-              {isOpen && (
-                <motion.p
-                  className="mt-4 text-sm text-foreground/75"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                >
-                  {faq.answer}
-                </motion.p>
-              )}
-            </AnimatePresence>
-          </motion.div>
+            £{amount}
+          </motion.button>
         );
       })}
     </div>
   );
 }
 
-function FAQSection({ content }: { content: LandingContent }) {
+function USPStrip({ items }: { items: string[] }) {
   return (
-    <section id="faq" className="section-shell py-[var(--space-12)]">
-      <SectionHeading copy={content.faq.heading} />
-      <FAQAccordion items={content.faq.items} />
+    <section className="snap-none border-t border-b border-white/10 bg-[rgba(12,16,14,0.72)] py-6 text-[0.7rem] uppercase tracking-[0.35em] text-white/60 backdrop-blur">
+      <div className="section-shell flex flex-wrap items-center justify-between gap-6">
+        {items.map((item) => (
+          <span key={item} className="flex items-center gap-3">
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-white/40" />
+            {item}
+          </span>
+        ))}
+      </div>
     </section>
   );
 }
 
-function FinalSection({ content }: { content: LandingContent }) {
-  const final = content.final;
+function SmartVideo({ media, prefersReducedMotion, onPlay }: { media: MediaAsset; prefersReducedMotion: boolean; onPlay: () => void }) {
+  const [shouldPlay, setShouldPlay] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    const element = containerRef.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShouldPlay(true);
+          } else {
+            setShouldPlay(false);
+          }
+        });
+      },
+      { threshold: 0.55 }
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [prefersReducedMotion]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (!shouldPlay || prefersReducedMotion || !media.video) {
+      video.pause();
+      video.currentTime = 0;
+      return;
+    }
+    const playPromise = video.play();
+    if (typeof playPromise?.then === "function") {
+      playPromise
+        .then(() => onPlay())
+        .catch(() => undefined);
+    }
+  }, [shouldPlay, prefersReducedMotion, media.video, onPlay]);
+
   return (
-    <section className="section-shell py-[var(--space-12)]">
-      <div className="rounded-[2.8rem] border border-ink/10 bg-ink p-10 text-white shadow-[0_36px_80px_rgba(10,28,20,0.28)]">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl space-y-4">
-            <span className="inline-flex items-center rounded-full bg-white/15 px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-white/75">
-              {final.eyebrow}
-            </span>
-            <h2 className="heading-font heading-xl text-white">{final.headline}</h2>
-            <p className="text-sm text-white/80 md:text-base">{final.body}</p>
-          </div>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <a
-              href={CTA_PRIMARY}
-              className="inline-flex items-center justify-center rounded-full bg-secondary px-8 py-3 text-base font-semibold text-ink shadow-[0_28px_60px_rgba(255,179,75,0.35)] transition hover:bg-secondary/90"
+    <div ref={containerRef} className="relative overflow-hidden rounded-[1.8rem] border border-white/12 bg-white/5">
+      <Image src={media.poster} alt={media.alt} width={720} height={405} className={`h-full w-full object-cover transition-opacity duration-500 ${shouldPlay && !prefersReducedMotion && media.video ? "opacity-0" : "opacity-100"}`} />
+      {!prefersReducedMotion && media.video && (
+        <video
+          ref={videoRef}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${shouldPlay ? "opacity-100" : "opacity-0"}`}
+          muted
+          loop
+          playsInline
+          poster={media.poster}
+        >
+          <source src={media.video} type="video/mp4" />
+        </video>
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-black/0" />
+    </div>
+  );
+}
+
+function HowItWorks({ content, prefersReducedMotion }: { content: LandingContent; prefersReducedMotion: boolean }) {
+  return (
+    <section id="how" className="snap-start flex min-h-[100dvh] items-center bg-[#0d1412]">
+      <div className="section-shell grid gap-12 py-28 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:items-start">
+        <div className="sticky top-32 flex flex-col gap-4 text-white">
+          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">How it works</span>
+          <h2 className="heading-xl">Scroll-triggered scenes walk you from tap to wagging tail.</h2>
+          <p className="text-sm uppercase tracking-[0.28em] text-white/45">Choose amount → Pay securely → See impact</p>
+        </div>
+        <div className="grid gap-8 lg:pl-12">
+          {content.steps.map((step, index) => (
+            <motion.article
+              key={step.id}
+              className="glass-card flex h-full flex-col gap-5 rounded-[2.2rem] border border-white/12 bg-white/5 p-6 text-white"
+              initial={{ opacity: 0, y: 38 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.08 }}
             >
-              {final.button}
-            </a>
-            <a
-              href={CTA_FACEBOOK}
-              className="inline-flex items-center justify-center rounded-full border border-white/25 px-6 py-2.5 text-sm font-semibold text-white/80 transition hover:border-secondary hover:text-secondary"
-            >
-              {final.secondary}
-            </a>
-          </div>
+              <span className="text-xs font-semibold uppercase tracking-[0.32em] text-white/55">{step.badge}</span>
+              <SmartVideo
+                media={step.media}
+                prefersReducedMotion={prefersReducedMotion}
+                onPlay={() => trackEvent("story_video_play", { id: step.id, surface: "how_it_works" })}
+              />
+              <div className="space-y-3">
+                <h3 className="heading-sm text-white">{step.title}</h3>
+                <p className="text-sm text-white/70">{step.copy}</p>
+              </div>
+            </motion.article>
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-function StickyDonateBar({ content }: { content: LandingContent }) {
+function BeforeAfter({ media }: { media: StoryItem["media"] }) {
+  const [position, setPosition] = useState(52);
+  return (
+    <div className="relative overflow-hidden rounded-[1.9rem] border border-white/12 bg-white/5">
+      <Image src={media.after.poster} alt={media.after.alt} width={720} height={520} className="h-full w-full object-cover" />
+      <div className="absolute inset-0 overflow-hidden" style={{ width: `${position}%` }}>
+        <Image src={media.before.poster} alt={media.before.alt} width={720} height={520} className="h-full w-full object-cover" />
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-black/0" />
+      <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-3 text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
+        Before
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={position}
+          onInput={(event) => setPosition(Number((event.target as HTMLInputElement).value))}
+          className="h-[2px] w-[60%] appearance-none rounded-full bg-white/30"
+        />
+        After
+      </div>
+    </div>
+  );
+}
+
+function Stories({ content, prefersReducedMotion }: { content: LandingContent; prefersReducedMotion: boolean }) {
+  return (
+    <section id="stories" className="snap-start flex min-h-[100dvh] items-center bg-[#0e1a16]">
+      <div className="section-shell grid gap-10 py-28">
+        <div className="max-w-3xl space-y-4 text-white">
+          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">Rescue stories</span>
+          <h2 className="heading-xl">Micro-donations opening cinematic rescue chapters.</h2>
+        </div>
+        <div className="grid gap-7 md:grid-cols-2">
+          {content.stories.map((story, index) => (
+            <motion.article
+              key={story.id}
+              className="glass-card flex h-full flex-col justify-between gap-6 rounded-[2.2rem] border border-white/12 bg-white/5 p-6 text-white"
+              initial={{ opacity: 0, y: 38 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.1 }}
+            >
+              <BeforeAfter media={story.media} />
+              <div className="space-y-4">
+                <div>
+                  <h3 className="heading-sm">{story.title}</h3>
+                  <p className="mt-2 text-sm text-white/70">{story.copy}</p>
+                </div>
+                <SmartVideo
+                  media={{ poster: story.media.after.poster, video: story.media.clip?.video, alt: story.media.after.alt }}
+                  prefersReducedMotion={prefersReducedMotion}
+                  onPlay={() => trackEvent("story_video_play", { id: story.id, surface: "stories" })}
+                />
+                <p className="text-xs uppercase tracking-[0.32em] text-white/55">{story.stat}</p>
+              </div>
+              <a
+                href={story.ctaHref}
+                className="cta-muted inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-white/75"
+                onClick={() => trackEvent("cta_click_primary", { surface: "stories", id: story.id })}
+              >
+                {story.ctaLabel}
+              </a>
+            </motion.article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Bento({ content }: { content: LandingContent }) {
+  return (
+    <section id="impact" className="snap-start flex min-h-[100dvh] items-center bg-[#101b16]">
+      <div className="section-shell grid gap-12 py-28">
+        <div className="max-w-3xl space-y-4 text-white">
+          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">Impact system</span>
+          <h2 className="heading-xl">Ops, storytelling, and community in one rhythm.</h2>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          {content.bento.map((tile) => (
+            <motion.article
+              key={tile.id}
+              className="glass-card flex h-full flex-col justify-between gap-5 rounded-[2.2rem] border border-white/12 bg-white/5 p-7 text-white"
+              initial={{ opacity: 0, y: 32 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            >
+              <div className="space-y-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.32em] text-white/60">{tile.eyebrow}</span>
+                <h3 className="heading-md text-white">{tile.title}</h3>
+                <p className="text-sm text-white/70">{tile.copy}</p>
+              </div>
+              <a
+                href={tile.href}
+                className="cta-muted inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-white/80"
+                onClick={() => trackEvent("cta_click_primary", { surface: "bento", id: tile.id })}
+              >
+                {tile.ctaLabel}
+              </a>
+            </motion.article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FAQSection({ content }: { content: LandingContent }) {
+  const [open, setOpen] = useState<string | null>(content.faq[0]?.question ?? null);
+  return (
+    <section id="faq" className="snap-none bg-[#f6f4f0] py-28 text-[#101815]">
+      <div className="section-shell grid gap-12 lg:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="space-y-5">
+          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[#4f5d58]">FAQ</span>
+          <h2 className="heading-xl text-[#101815]">Everything you need before you hit donate.</h2>
+        </div>
+        <div className="space-y-4">
+          {content.faq.map((item) => {
+            const isOpen = open === item.question;
+            return (
+              <motion.div key={item.question} className="rounded-3xl border border-[#101815]/12 bg-white p-6 shadow-[0_24px_56px_rgba(16,24,21,0.08)]" initial={false}>
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between text-left"
+                  onClick={() => setOpen(isOpen ? null : item.question)}
+                >
+                  <span className="heading-sm text-[#101815]">{item.question}</span>
+                  <motion.span animate={{ rotate: isOpen ? 45 : 0 }} className="text-2xl text-[#ff6f61]">
+                    +
+                  </motion.span>
+                </button>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.p
+                      className="mt-4 text-sm text-[#4f5d58]"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.25, ease: "easeOut" }}
+                    >
+                      {item.answer}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FinalCTA({ content }: { content: LandingContent }) {
+  const { final } = content;
+  return (
+    <section id="donate" className="snap-none relative flex min-h-[100dvh] items-center overflow-hidden bg-[#0b1411]">
+      <div className="absolute -inset-[30%] bg-[radial-gradient(circle_at_center,#1d6e59_0%,transparent_58%)] opacity-35" />
+      <div className="hero-mask" />
+      <div className="section-shell relative z-10 grid gap-10 py-28 text-white lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="space-y-5">
+          <span className="inline-flex rounded-full border border-white/20 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-white/70">
+            {final.eyebrow}
+          </span>
+          <h2 className="heading-xl">{final.headline}</h2>
+          <p className="max-w-xl text-sm text-white/75">{final.body}</p>
+        </div>
+        <div className="flex flex-col gap-4 self-end">
+          <MagneticButton
+            href={final.donateHref}
+            onHover={() => trackEvent("cta_click_primary", { surface: "final-hover" })}
+          >
+            {final.ctaLabel}
+          </MagneticButton>
+          <a href={final.secondaryHref} className="cta-muted inline-flex items-center justify-center text-xs uppercase tracking-[0.3em] text-white/75">
+            {final.secondaryLabel}
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function StickyDonateDock({ label, href }: { label: string; href: string }) {
   const [visible, setVisible] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > 360);
+    const handle = () => {
+      const doc = document.documentElement;
+      const height = doc.scrollHeight - window.innerHeight;
+      const ratio = height > 0 ? window.scrollY / height : 0;
+      setProgress(ratio);
+      setVisible(window.scrollY > window.innerHeight * 0.55);
+    };
+    handle();
+    window.addEventListener("scroll", handle, { passive: true });
+    return () => window.removeEventListener("scroll", handle);
+  }, []);
+
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.aside
+          initial={{ opacity: 0, y: 56 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 56 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="fixed bottom-6 left-1/2 z-[95] w-full max-w-[min(560px,calc(100%-2.5rem))] -translate-x-1/2 overflow-hidden rounded-full border border-white/10 bg-[rgba(11,15,13,0.9)] shadow-[0_30px_80px_rgba(6,10,9,0.65)] backdrop-blur lg:hidden"
+        >
+          <div className="flex items-center justify-between gap-4 px-5 py-4 text-white">
+            <div className="flex flex-col">
+              <span className="text-xs uppercase tracking-[0.3em] text-white/55">Donate</span>
+              <span className="text-sm font-semibold">{label}</span>
+            </div>
+            <MagneticButton href={href}>{label}</MagneticButton>
+          </div>
+          <div className="h-1 w-full bg-white/10">
+            <div className="h-full bg-white" style={{ width: `${Math.round(progress * 100)}%` }} />
+          </div>
+        </motion.aside>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function SocialIcon({ label }: { label: string }) {
+  const icon = label.toLowerCase();
+  switch (icon) {
+    case "instagram":
+      return (
+        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <rect x="3" y="3" width="18" height="18" rx="5" />
+          <circle cx="12" cy="12" r="4.2" />
+          <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none" />
+        </svg>
+      );
+    case "youtube":
+      return (
+        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="currentColor">
+          <path d="M21.6 7.6c-.2-1.2-.9-1.9-2-2C17.6 5.3 12 5.3 12 5.3s-5.6 0-7.6.3c-1.1.1-1.8.8-2 2C2.1 9.6 2 12 2 12s.1 2.4.4 4.4c.2 1.2.9 1.9 2 2 2 .3 7.6.3 7.6.3s5.6 0 7.6-.3c1.1-.1 1.8-.8 2-2 .3-2 .4-4.4.4-4.4s-.1-2.4-.4-4.4ZM10.1 15.2v-6l5.2 3-5.2 3Z" />
+        </svg>
+      );
+    case "linkedin":
+      return (
+        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="currentColor">
+          <rect x="4" y="9" width="3.5" height="11" rx="0.4" />
+          <circle cx="5.8" cy="5.5" r="2" />
+          <path d="M12 10.2c0-1 .8-1.8 1.8-1.8h.5c2 0 3.7 1.6 3.7 3.6V20H14v-6.8c0-.4-.3-.7-.7-.7-.4 0-.7.3-.7.7V20H12v-9.8Z" />
+        </svg>
+      );
+    default:
+      return <span className="font-semibold text-[0.65rem] uppercase">{label.slice(0, 2)}</span>;
+  }
+}
+
+export function Landing({ content }: { content: LandingContent }) {
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const [navSolid, setNavSolid] = useState(false);
+
+  usePointerShift(prefersReducedMotion);
+  useSmoothScroll(prefersReducedMotion);
+
+  useEffect(() => {
+    const onScroll = () => setNavSolid(window.scrollY > 24);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 40 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className="fixed bottom-6 left-1/2 z-50 w-full max-w-[min(560px,calc(100%-2.5rem))] -translate-x-1/2 rounded-full border border-ink/5 bg-ink/95 px-5 py-4 text-white shadow-[0_40px_65px_rgba(10,28,20,0.45)] backdrop-blur lg:hidden"
-        >
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <LogoMark className="h-10 w-10" />
-              <div className="text-left">
-                <p className="text-sm font-semibold">{content.sticky.headline}</p>
-                <p className="text-xs text-white/70">{content.sticky.subheadline}</p>
-              </div>
-            </div>
-            <a
-              href={CTA_PRIMARY}
-              className="inline-flex items-center justify-center rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:bg-secondary/90"
-            >
-              {content.sticky.button}
-            </a>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-export function Landing({ content }: { content: LandingContent }) {
-  useSmoothScroll();
-
-  return (
-    <main className="flex min-h-screen flex-col bg-background">
-      <Navigation content={content} />
-      <Hero content={content} />
-      <StickyDonateBar content={content} />
-      <USPStrip content={content} />
-      <HowItWorksSection content={content} />
-      <BentoSection content={content} />
-      <StoriesSection content={content} />
+    <main className="relative flex min-h-screen snap-y snap-mandatory flex-col text-white">
+      <Navigation content={content} solid={navSolid} />
+      <RailIndicators />
+      <Hero content={content} prefersReducedMotion={prefersReducedMotion} />
+      <USPStrip items={content.usp} />
+      <HowItWorks content={content} prefersReducedMotion={prefersReducedMotion} />
+      <Stories content={content} prefersReducedMotion={prefersReducedMotion} />
+      <Bento content={content} />
       <FAQSection content={content} />
-      <FinalSection content={content} />
+      <FinalCTA content={content} />
+      <StickyDonateDock label="£1 Feeds a Dog Today" href={content.hero.donateHref} />
     </main>
   );
 }
+
+const EN_CONTENT: LandingContent = {
+  hero: {
+    eyebrow: "Angels Haven • UK ↔ TR",
+    headline: "£1 = One Meal. Change a Life Today.",
+    subheadline: "Micro-donations move food, emergency care, and flights for rescues between Turkey and the UK.",
+    summary: "Transparent monthly impact • 1-click secure checkout",
+    ctaLabel: "£1 Feeds a Dog Today",
+    donateHref: CTA_PRIMARY,
+    donateAmounts: [1, 8, 25, 55],
+    stats: {
+      label: "Meals this month",
+      value: 4186,
+      suffix: "",
+    },
+    social: [
+      { label: "Instagram", href: "https://instagram.com" },
+      { label: "YouTube", href: "https://youtube.com" },
+      { label: "LinkedIn", href: "https://linkedin.com" },
+    ],
+    media: {
+      poster: "/images/hero-poster.avif",
+      video: "/videos/hero-loop.mp4",
+      alt: "Rescued dogs gathering around a volunteer from above",
+    },
+  },
+  usp: [
+    "£1 = One Meal",
+    "Monthly Transparency",
+    "1-Click Secure Checkout",
+    "UK ↔ TR Operations",
+  ],
+  steps: [
+    {
+      id: "choose",
+      badge: "Step 01",
+      title: "Choose your amount",
+      copy: "Start at £1 or set a custom gift. The live meter updates instantly as pledges stack.",
+      media: {
+        poster: "/images/step-choose.avif",
+        video: "/videos/step-choose.mp4",
+        alt: "Donation amount selector interface",
+      },
+    },
+    {
+      id: "pay",
+      badge: "Step 02",
+      title: "Pay securely in one tap",
+      copy: "Apple Pay, Google Pay, Stripe, and PayPal are wired into a single encrypted sheet—no account needed.",
+      media: {
+        poster: "/images/step-pay.avif",
+        video: "/videos/step-pay.mp4",
+        alt: "Secure checkout interface",
+      },
+    },
+    {
+      id: "impact",
+      badge: "Step 03",
+      title: "See the impact feed",
+      copy: "Follow daily footage, vet receipts, and GPS logs as your £1 moves from street rescue to foster home.",
+      media: {
+        poster: "/images/step-impact.avif",
+        video: "/videos/step-impact.mp4",
+        alt: "Impact dashboard",
+      },
+    },
+  ],
+  stories: [
+    {
+      id: "mila",
+      title: "Mila • Street to sofa in 14 days",
+      copy: "Found trembling in Fethiye. Micro-donations funded food, vaccinations, and a flight to her London foster.",
+      stat: "Day 14 • Foster placement confirmed",
+      media: {
+        before: { poster: "/images/story-before.png", alt: "Mila before rescue" },
+        after: { poster: "/images/story-mila.avif", alt: "Mila resting after rescue" },
+        clip: { poster: "/images/story-mila.avif", video: "/videos/story-mila.mp4", alt: "Mila video clip" },
+      },
+      ctaLabel: "Fund more recoveries",
+      ctaHref: CTA_PRIMARY,
+    },
+    {
+      id: "duman",
+      title: "Duman • Emergency care to trail runs",
+      copy: "Hit by traffic near Antalya. The community covered surgery, rehab, and relocation—he now runs Brighton trails.",
+      stat: "Day 28 • Cleared for adoption",
+      media: {
+        before: { poster: "/images/story-before.png", alt: "Duman before treatment" },
+        after: { poster: "/images/story-duman.avif", alt: "Duman running happily" },
+        clip: { poster: "/images/story-duman.avif", video: "/videos/story-duman.mp4", alt: "Duman video clip" },
+      },
+      ctaLabel: "Send the next meal",
+      ctaHref: CTA_PRIMARY,
+    },
+  ],
+  bento: [
+    {
+      id: "meals",
+      eyebrow: "Meals",
+      title: "2 tonnes of food monthly",
+      copy: "Logistics partners across Fethiye, Dalyan, and Izmir receive routed deliveries every 14 days.",
+      ctaLabel: "View route logs",
+      href: CTA_REPORT,
+    },
+    {
+      id: "emergency",
+      eyebrow: "Emergency",
+      title: "< 6 hr response time",
+      copy: "Alerts funnel to an ops lead who unlocks vet care, treatment, and medication in under six hours on average.",
+      ctaLabel: "See treatment receipts",
+      href: CTA_REPORT,
+    },
+    {
+      id: "sponsor",
+      eyebrow: "Sponsor",
+      title: "Sponsor a paw",
+      copy: "Recurring donors keep transports and foster flights funded—sponsor one dog’s journey each month.",
+      ctaLabel: "Sponsor now",
+      href: CTA_PRIMARY,
+    },
+    {
+      id: "report",
+      eyebrow: "Report",
+      title: "Transparency report",
+      copy: "Daily ops feed, monthly receipts, and compliance filings keep donors auditing in real time.",
+      ctaLabel: "Download report",
+      href: CTA_REPORT,
+    },
+  ],
+  faq: [
+    {
+      question: "Do I really see where £1 goes?",
+      answer: "Yes. Each donation unlocks live meal counts, vet receipts, and daily reels inside the impact feed.",
+    },
+    {
+      question: "Is checkout encrypted?",
+      answer: "We process via Stripe and PayPal with TLS 1.3, Apple Pay, Google Pay, and Radar fraud protection.",
+    },
+    {
+      question: "Can I pause recurring donations?",
+      answer: "Manage recurring gifts instantly inside your receipt—no forms or waiting periods required.",
+    },
+    {
+      question: "How fast does a rescue move?",
+      answer: "Emergency cases move from alert to funded treatment in under six hours on average, with timeline updates.",
+    },
+    {
+      question: "Will I receive a tax receipt?",
+      answer: "HMRC-compliant receipts hit your inbox instantly and roll up into a monthly statement for easy filing.",
+    },
+    {
+      question: "What happens after I donate?",
+      answer: "You join the private community feed, get behind-the-scenes drops, and can opt into flight volunteer missions.",
+    },
+  ],
+  final: {
+    eyebrow: "Ready to fund the next rescue?",
+    headline: "Make today a little safer for one dog.",
+    body: "£1 triggers food, treatment, and transport. Join the donors powering two tonnes of aid every month.",
+    ctaLabel: "£1 Feeds a Dog Today",
+    secondaryLabel: "Visit the community feed",
+    secondaryHref: CTA_COMMUNITY,
+    donateHref: CTA_PRIMARY,
+  },
+};
 
 export default function Home() {
   return <Landing content={EN_CONTENT} />;

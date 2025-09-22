@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { DM_Sans, Poppins } from "next/font/google";
+import { Inter, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
 });
 
-const poppins = Poppins({
-  variable: "--font-poppins",
+const display = Bricolage_Grotesque({
+  variable: "--font-display",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
   display: "swap",
@@ -45,7 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${dmSans.variable} ${poppins.variable} bg-background text-foreground antialiased`}
+        className={`${inter.variable} ${display.variable} bg-background text-foreground antialiased`}
       >
         <Script id="ms-clarity" strategy="afterInteractive">
           {`(function(c,l,a,r,i,t,y){

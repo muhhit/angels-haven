@@ -17,29 +17,31 @@ Key scripts:
 
 ## Design System Cheatsheet
 
-- **Typography** — Body locked at `1rem/1.5`. Headings follow a major third scale (`h6` 1.25rem → `h1` 3.8rem) with line-height easing from 1.32 → 1.18 and tightened letter-spacing (-1% to -2.8%). Utilities live in `app/globals.css`.
-- **Spacing & Grid** — Sections and shells use the 8pt scale (`--space-*` tokens) with a 12/8/4 responsive column rhythm. Max content width sits at 1200px; gutters widen on large screens via `.section-shell`.
-- **Color** — 60/30/10 palette split across background neutrals, primary forest ink, and an ambient teal secondary. All tokens are surfaced under the `@theme inline` block for Tailwind usage and meet WCAG AA contrast.
-- **Surfaces** — Card radii and shadows are codified as `--radius-*` & `--shadow-*` tokens to keep elevated tiles cohesive.
+- **Typography** — `--font-heading` (Bricolage Grotesque) powers display headlines, `--font-body` (`Inter`) drives paragraphs. Heading tracking is tightened for a cinematic feel while body copy stays at `1rem/1.6`.
+- **Spacing & Rhythm** — Shell gutters sit at 24–64px with `scroll-snap` applied to the four hero rail sections. Tokens live in `app/globals.css` for consistent spacing + curvature.
+- **Color** — Transparent dark mode palette with a single coral accent (`--color-accent`) reserved for primary CTAs. Overlays adjust automatically for light/dark OS themes.
+- **Surfaces** — `glass-card` utility applies blur, subtle border, and volumetric shadows; CTA helpers (`cta-primary`, `cta-muted`) keep hierarchy consistent.
 
 ## Motion & Accessibility
 
-- Smooth scrolling uses [`lenis`](https://www.npmjs.com/package/lenis) + GSAP ScrollTrigger. It automatically downgrades when `prefers-reduced-motion` is set, destroying Lenis and removing the extra RAF loop.
-- Hero intro choreography re-runs or cancels on the same preference toggle, while hero media stops autoplaying for reduced-motion visitors and falls back to the poster frame.
-- Global CSS already clamps transitions/animations to near-zero for reduced motion; new utilities respect the same flag.
-- Motion and smooth scroll initialise inside the shared `Landing` component so `/` and `/tr` routes stay in sync with a single implementation.
+- Smooth scrolling + scroll-snap rails use [`lenis`](https://www.npmjs.com/package/lenis) and GSAP, but automatically disable when `prefers-reduced-motion` is active.
+- Hero and “How it works” media swap from AVIF poster → muted MP4 only when in view; reduced motion keeps the still image.
+- CTA, amount chips, and FAQ accordions expose focus rings and keyboard control; only the coral primary button carries motion shadows.
+- Both `/` and `/tr` share the same motion pipeline through the exported `Landing` component.
+- Pointer-tracked gradient glows and magnetic CTA hovers run only when motion is allowed (handled by `usePointerShift`).
 
 ## Content & CTA Wiring
 
 Adjust copy, stats, and links in `app/page.tsx`:
-- CTA endpoints: `CTA_PRIMARY`, `CTA_REPORT`, `CTA_FACEBOOK` constants.
-- Metrics & timeline data: `heroStats`, `impactStats`, `timelineBeats`, and `transparencyBreakdown` arrays.
-- Placeholder media lives under `public/videos/hero-loop.mp4` and `public/images/*`; swap with final assets when ready.
+- Update the `EN_CONTENT` / `TR_CONTENT` objects for copy, media paths, and CTA destinations.
+- Asset budget: hero + step/story videos ≤1.2 MB muted loops; posters exported as AVIF/WebP in `public/images`.
+- Event tracking helper `trackEvent` pushes to `dataLayer` when present—wire analytics by reading those custom events.
 
 ## QA Checklist
 
 Before shipping changes:
 - `npm run lint -- --max-warnings 0`
 - `npx tsc --noEmit`
-- Smoke the hero + scroll sequences with and without reduced motion enabled.
-- Spot-check Lighthouse (performance + accessibility) once final assets drop.
+- Smoke the scroll-snap hero rail (hero → how it works → stories → impact) with and without reduced motion.
+- Validate hero media swap (poster → video) and story clips respect `prefers-reduced-motion`.
+- Run Lighthouse mobile (performance ≥90, accessibility ≥95) once final assets drop.
