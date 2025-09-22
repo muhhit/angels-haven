@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { DM_Sans, Poppins } from "next/font/google";
 import "./globals.css";
 
@@ -16,23 +17,23 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Angels Haven for Paws | Sponsor a Turkish Rescue Dog",
+  title: "Angels Haven for Paws — Donate to Dog Rescue (UK/TR)",
   description:
-    "Support Tülay's Angels Haven for Paws to rescue, rehabilitate, and match Turkish street dogs with loving UK homes.",
+    "£1 = one meal. Transparent, secure donations for rescue dogs across the UK & Turkey. Sponsor a paw today.",
   metadataBase: new URL("https://angels-haven.vercel.app"),
   openGraph: {
-    title: "Help a Turkish Rescue Dog Reach a Safe Home",
+    title: "Angels Haven for Paws — Donate to Dog Rescue (UK/TR)",
     description:
-      "Your monthly gift funds rescue, vet care, and adoption journeys from Türkiye to the UK.",
+      "£1 = one meal. Transparent, secure donations for rescue dogs across the UK & Turkey. Sponsor a paw today.",
     url: "https://angels-haven.vercel.app",
     siteName: "Angels Haven for Paws",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Angels Haven for Paws",
+    title: "Angels Haven for Paws — Donate to Dog Rescue (UK/TR)",
     description:
-      "Join the mission to move rescued Turkish dogs from the street to the sofa in 60 days.",
+      "£1 = one meal. Transparent, secure donations for rescue dogs across the UK & Turkey. Sponsor a paw today.",
   },
 };
 
@@ -46,6 +47,13 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${poppins.variable} bg-background text-foreground antialiased`}
       >
+        <Script id="ms-clarity" strategy="afterInteractive">
+          {`(function(c,l,a,r,i,t,y){
+  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "tehnfzseua");`}
+        </Script>
         {children}
       </body>
     </html>
