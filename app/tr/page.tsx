@@ -14,7 +14,8 @@ const TR_CONTENT: LandingContent = {
     summary: "Aylık şeffaflık • Tek dokunuşla güvenli ödeme",
     ctaLabel: "£1 Bugün Besler",
     donateHref: CTA_PRIMARY,
-    donateAmounts: [1, 8, 25, 55],
+    donateAmounts: [8, 1, 25, 100],
+    defaultSelectionLabel: "Çoğu bağışçı £8’i seçiyor",
     stats: {
       label: "Bu ay dağıtılan öğün",
       value: 4186,
@@ -39,10 +40,27 @@ const TR_CONTENT: LandingContent = {
       suffix: "kişi",
     },
     socialProof: [
-      { id: "today", metric: "142", caption: "Bugün bağış yaptı" },
-      { id: "moment", metric: "Her 5 dk", caption: "Bir öğün fonlanıyor" },
-      { id: "rating", metric: "4.9★", caption: "Topluluk puanı" },
+      {
+        id: "today",
+        metric: "🔥 127 kişi bugün bağışladı",
+        caption: "Kalabalığa katıl",
+        media: {
+          poster: "/images/hero-poster.avif",
+          video: "/videos/social-circle.mp4",
+          alt: "Gönüllünün çevresinde birleşen köpekler",
+        },
+      },
+      { id: "members", metric: "💙 2.847 aylık", caption: "Otomatik destekçiler" },
+      { id: "rating", metric: "⭐ 4.9/5", caption: "Şeffaflık puanı" },
     ],
+    urgency: {
+      remainingLabel: "Öğün bekleyen köpek",
+      remainingValue: "47",
+      goalLabel: "Aylık hedef %73 tamam",
+      goalPercent: 73,
+      footer: "Pazar gecesi öncesi açığı kapatmamıza yardım et.",
+    },
+    recurringHint: "Aylık seçersen mamalar hiç kesilmez.",
   },
   usp: [
     "£1 = Bir Öğün",

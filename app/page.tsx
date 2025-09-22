@@ -34,6 +34,7 @@ type HeroContent = {
   stats: StatMetric;
   social: { label: string; href: string }[];
   media: MediaAsset;
+  defaultSelectionLabel: string;
   liveCounter: {
     label: string;
     initial: number;
@@ -42,7 +43,20 @@ type HeroContent = {
     intervalMs: number;
     suffix?: string;
   };
-  socialProof: { id: string; metric: string; caption: string }[];
+  socialProof: {
+    id: string;
+    metric: string;
+    caption: string;
+    media?: MediaAsset;
+  }[];
+  urgency: {
+    remainingLabel: string;
+    remainingValue: string;
+    goalLabel: string;
+    goalPercent: number;
+    footer: string;
+  };
+  recurringHint: string;
 };
 
 type StepItem = {
@@ -468,9 +482,11 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent; pref
                 Monthly report
               </button>
             </div>
-            <DonationAmounts amounts={hero.donateAmounts} href={hero.donateHref} />
+            <DonationAmounts amounts={hero.donateAmounts} href={hero.donateHref} label={hero.defaultSelectionLabel} />
+            <RecurringHint hint={hero.recurringHint} />
             <LiveDonationPulse config={hero.liveCounter} prefersReducedMotion={prefersReducedMotion} />
-            <HeroSocialProof items={hero.socialProof} />
+            <UrgencyBanner data={hero.urgency} />
+            <HeroSocialProof items={hero.socialProof} prefersReducedMotion={prefersReducedMotion} />
           </div>
         </div>
         <motion.aside
@@ -519,7 +535,7 @@ function ScrollPrompt() {
   );
 }
 
-function DonationAmounts({ amounts, href }: { amounts: number[]; href: string }) {
+function DonationAmounts({ amounts, href, label }: { amounts: number[]; href: string; label?: string }) {
   const [active, setActive] = useState<number | null>(amounts[0] ?? null);
   return (
     <div className="flex flex-wrap gap-2">
@@ -544,6 +560,12 @@ function DonationAmounts({ amounts, href }: { amounts: number[]; href: string })
           </motion.button>
         );
       })}
+      {label && (
+        <div className="mt-2 flex w-full items-center gap-2 text-xs text-white/70">
+          <span className="text-base">★</span>
+          <span>{label}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -579,18 +601,56 @@ function LiveDonationPulse({
   );
 }
 
-function HeroSocialProof({ items }: { items: HeroContent["socialProof"] }) {
+function HeroSocialProof({ items, prefersReducedMotion }: { items: HeroContent["socialProof"]; prefersReducedMotion: boolean }) {
   if (!items.length) return null;
   return (
     <div className="grid gap-3 md:grid-cols-3">
       {items.map((item) => (
-        <div key={item.id} className="glass-card flex flex-col gap-1 rounded-[1.6rem] border border-white/12 bg-white/6 px-4 py-3 text-white/80">
-          <span className="text-lg font-semibold text-white">{item.metric}</span>
-          <span className="text-xs uppercase tracking-[0.28em] text-white/55">{item.caption}</span>
+        <div key={item.id} className="glass-card flex flex-col gap-3 rounded-[1.6rem] border border-white/12 bg-white/6 px-4 py-4 text-white/80">
+          {item.media ? (
+            <div className="relative h-32 overflow-hidden rounded-[1.2rem] border border-white/12">
+              <Image src={item.media.poster} alt={item.media.alt} fill className={`object-cover transition-opacity duration-500 ${item.media.video && !prefersReducedMotion ? 'opacity-0' : 'opacity-100'}`} />
+              {item.media.video && !prefersReducedMotion && (
+                <video className="absolute inset-0 h-full w-full object-cover" autoPlay muted loop playsInline poster={item.media.poster}>
+                  <source src={item.media.video} type="video/mp4" />
+                </video>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-black/0" />
+            </div>
+          ) : null}
+          <div className="flex flex-col gap-1">
+            <span className="text-lg font-semibold text-white">{item.metric}</span>
+            <span className="text-xs uppercase tracking-[0.28em] text-white/55">{item.caption}</span>
+          </div>
         </div>
       ))}
     </div>
   );
+}
+
+function UrgencyBanner({ data }: { data: HeroContent["urgency"] }) {
+  const percent = Math.min(100, Math.max(0, data.goalPercent));
+  return (
+    <div className="glass-card flex flex-col gap-3 rounded-[2rem] border border-white/12 bg-white/8 px-5 py-4 text-white/80">
+      <div className="flex items-center justify-between text-xs uppercase tracking-[0.28em] text-white/55">
+        <span>{data.remainingLabel}</span>
+        <span>{data.goalLabel}</span>
+      </div>
+      <div className="flex items-baseline justify-between">
+        <span className="text-2xl font-semibold text-white">{data.remainingValue}</span>
+        <span className="text-xs text-white/60">{percent}%</span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-white/15">
+        <div className="h-full rounded-full bg-white" style={{ width: `${percent}%` }} />
+      </div>
+      <span className="text-xs text-white/60">{data.footer}</span>
+    </div>
+  );
+}
+
+function RecurringHint({ hint }: { hint: string }) {
+  if (!hint) return null;
+  return <p className="text-xs text-white/60">{hint}</p>;
 }
 
 function USPStrip({ items }: { items: string[] }) {
@@ -1092,7 +1152,8 @@ const EN_CONTENT: LandingContent = {
     summary: "Transparent monthly impact • 1-click secure checkout",
     ctaLabel: "£1 Feeds a Dog Today",
     donateHref: CTA_PRIMARY,
-    donateAmounts: [1, 8, 25, 55],
+    donateAmounts: [8, 1, 25, 100],
+    defaultSelectionLabel: "Most people choose £8",
     stats: {
       label: "Meals this month",
       value: 4186,
@@ -1117,10 +1178,27 @@ const EN_CONTENT: LandingContent = {
       suffix: "people",
     },
     socialProof: [
-      { id: "today", metric: "142", caption: "Donated today" },
-      { id: "moment", metric: "Every 5 min", caption: "A meal is funded" },
-      { id: "rating", metric: "4.9★", caption: "Community rating" },
+      {
+        id: "today",
+        metric: "🔥 127 donated today",
+        caption: "See who you’re joining",
+        media: {
+          poster: "/images/hero-poster.avif",
+          video: "/videos/social-circle.mp4",
+          alt: "Top-down circle of dogs around a volunteer",
+        },
+      },
+      { id: "members", metric: "💙 2,847 monthly", caption: "Supporters on autopilot" },
+      { id: "rating", metric: "⭐ 4.9/5", caption: "Transparency rating" },
     ],
+    urgency: {
+      remainingLabel: "Dogs still needing meals",
+      remainingValue: "47",
+      goalLabel: "Monthly goal 73% complete",
+      goalPercent: 73,
+      footer: "Help us close the gap before Sunday night.",
+    },
+    recurringHint: "Make it monthly to keep meals arriving automatically.",
   },
   usp: [
     "£1 = One Meal",
