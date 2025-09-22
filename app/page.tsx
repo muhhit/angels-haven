@@ -34,6 +34,15 @@ type HeroContent = {
   stats: StatMetric;
   social: { label: string; href: string }[];
   media: MediaAsset;
+  liveCounter: {
+    label: string;
+    initial: number;
+    minIncrement: number;
+    maxIncrement: number;
+    intervalMs: number;
+    suffix?: string;
+  };
+  socialProof: { id: string; metric: string; caption: string }[];
 };
 
 type StepItem = {
@@ -368,27 +377,31 @@ function HeroMedia({ media, active, prefersReducedMotion }: { media: MediaAsset;
 }
 
 function Hero({ content, prefersReducedMotion }: { content: LandingContent; prefersReducedMotion: boolean }) {
-  const mediaActivatedRef = useRef(prefersReducedMotion);
-  const [videoActive, setVideoActive] = useState(prefersReducedMotion);
+  const mediaObserverRef = useRef<IntersectionObserver | null>(null);
+  const [videoActive, setVideoActive] = useState(false);
   const heroRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const container = heroRef.current;
-    if (!container || prefersReducedMotion || mediaActivatedRef.current) return;
+    if (!container || prefersReducedMotion) return;
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            mediaActivatedRef.current = true;
-            setVideoActive(true);
-            observer.disconnect();
-          }
+          setVideoActive(entry.isIntersecting);
         });
       },
-      { threshold: 0.45 }
+      { threshold: 0.4 }
     );
     observer.observe(container);
+    mediaObserverRef.current = observer;
     return () => observer.disconnect();
+  }, [prefersReducedMotion]);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setVideoActive(false);
+      mediaObserverRef.current?.disconnect();
+    }
   }, [prefersReducedMotion]);
 
   useEffect(() => {
@@ -414,7 +427,11 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent; pref
   const { hero } = content;
 
   return (
-    <section id="hero" ref={heroRef} className="hero-surface relative flex min-h-[100dvh] snap-start items-center justify-center overflow-hidden">
+    <section
+      id="hero"
+      ref={heroRef}
+      className="hero-surface relative flex min-h-[100dvh] snap-start items-center justify-center overflow-hidden"
+    >
       <HeroMedia media={hero.media} active={videoActive} prefersReducedMotion={prefersReducedMotion} />
       <div className="section-shell relative z-10 grid gap-12 py-32 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex flex-col gap-8">
@@ -452,6 +469,8 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent; pref
               </button>
             </div>
             <DonationAmounts amounts={hero.donateAmounts} href={hero.donateHref} />
+            <LiveDonationPulse config={hero.liveCounter} prefersReducedMotion={prefersReducedMotion} />
+            <HeroSocialProof items={hero.socialProof} />
           </div>
         </div>
         <motion.aside
@@ -525,6 +544,51 @@ function DonationAmounts({ amounts, href }: { amounts: number[]; href: string })
           </motion.button>
         );
       })}
+    </div>
+  );
+}
+
+function LiveDonationPulse({
+  config,
+  prefersReducedMotion,
+}: {
+  config: HeroContent["liveCounter"];
+  prefersReducedMotion: boolean;
+}) {
+  const { initial, intervalMs, minIncrement, maxIncrement, label, suffix } = config;
+  const [count, setCount] = useState(initial);
+
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    const interval = window.setInterval(() => {
+      setCount((prev) => prev + Math.floor(Math.random() * (maxIncrement - minIncrement + 1)) + minIncrement);
+    }, intervalMs);
+    return () => window.clearInterval(interval);
+  }, [intervalMs, minIncrement, maxIncrement, prefersReducedMotion]);
+
+  return (
+    <div className="glass-card flex items-center gap-4 rounded-[2rem] border border-white/15 bg-white/8 px-5 py-4 text-white/80">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-sm font-semibold text-white">
+        ⏱
+      </div>
+      <div className="flex flex-col leading-tight">
+        <span className="text-xs uppercase tracking-[0.28em] text-white/55">{label}</span>
+        <span className="text-lg font-semibold text-white">{count.toLocaleString()} {suffix}</span>
+      </div>
+    </div>
+  );
+}
+
+function HeroSocialProof({ items }: { items: HeroContent["socialProof"] }) {
+  if (!items.length) return null;
+  return (
+    <div className="grid gap-3 md:grid-cols-3">
+      {items.map((item) => (
+        <div key={item.id} className="glass-card flex flex-col gap-1 rounded-[1.6rem] border border-white/12 bg-white/6 px-4 py-3 text-white/80">
+          <span className="text-lg font-semibold text-white">{item.metric}</span>
+          <span className="text-xs uppercase tracking-[0.28em] text-white/55">{item.caption}</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -900,9 +964,76 @@ function SocialIcon({ label }: { label: string }) {
   }
 }
 
+function ExitIntentModal({
+  open,
+  onClose,
+  donateHref,
+  prefersReducedMotion,
+}: {
+  open: boolean;
+  onClose: () => void;
+  donateHref: string;
+  prefersReducedMotion: boolean;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-[rgba(6,10,9,0.72)] backdrop-blur"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "easeOut" }}
+          onClick={onClose}
+        >
+          <motion.div
+            className="glass-card relative max-w-lg rounded-[2.6rem] border border-white/12 bg-white/10 px-8 py-10 text-white"
+            initial={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0, y: prefersReducedMotion ? 0 : 24 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0, y: prefersReducedMotion ? 0 : 24 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease: "easeOut" }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="absolute right-6 top-6 text-white/60 transition hover:text-white"
+              onClick={onClose}
+              aria-label="Close reminder"
+            >
+              ×
+            </button>
+            <span className="text-xs font-semibold uppercase tracking-[0.32em] text-white/60">Wait—one last wag</span>
+            <h3 className="heading-md mt-4 text-white">Before you go, £1 today fills a bowl tonight.</h3>
+            <p className="mt-3 text-sm text-white/70">
+              We’re only a few meals away from hitting this week’s target. One more tap keeps the rescue crews rolling.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <MagneticButton
+                href={donateHref}
+                onHover={() => trackEvent("cta_click_primary", { surface: "exit-intent" })}
+              >
+                £1 Feeds a Dog Today
+              </MagneticButton>
+              <button
+                type="button"
+                className="cta-muted text-xs uppercase tracking-[0.3em] text-white/70"
+                onClick={onClose}
+              >
+                Maybe later
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export function Landing({ content }: { content: LandingContent }) {
   const prefersReducedMotion = usePrefersReducedMotion();
   const [navSolid, setNavSolid] = useState(false);
+  const [exitIntentVisible, setExitIntentVisible] = useState(false);
+  const [exitIntentDismissed, setExitIntentDismissed] = useState(false);
 
   usePointerShift(prefersReducedMotion);
   useSmoothScroll(prefersReducedMotion);
@@ -913,6 +1044,23 @@ export function Landing({ content }: { content: LandingContent }) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    const handleMouseLeave = (event: MouseEvent) => {
+      if (event.clientY <= 0 && !exitIntentDismissed) {
+        setExitIntentVisible(true);
+        trackEvent("exit_intent_shown", {});
+      }
+    };
+    window.addEventListener("mouseout", handleMouseLeave);
+    return () => window.removeEventListener("mouseout", handleMouseLeave);
+  }, [exitIntentDismissed, prefersReducedMotion]);
+
+  const closeExitModal = () => {
+    setExitIntentVisible(false);
+    setExitIntentDismissed(true);
+  };
 
   return (
     <main className="relative flex min-h-screen snap-y snap-mandatory flex-col text-white">
@@ -926,6 +1074,12 @@ export function Landing({ content }: { content: LandingContent }) {
       <FAQSection content={content} />
       <FinalCTA content={content} />
       <StickyDonateDock label="£1 Feeds a Dog Today" href={content.hero.donateHref} />
+      <ExitIntentModal
+        open={exitIntentVisible}
+        onClose={closeExitModal}
+        donateHref={content.hero.donateHref}
+        prefersReducedMotion={prefersReducedMotion}
+      />
     </main>
   );
 }
@@ -954,6 +1108,19 @@ const EN_CONTENT: LandingContent = {
       video: "/videos/hero-loop.mp4",
       alt: "Rescued dogs gathering around a volunteer from above",
     },
+    liveCounter: {
+      label: "Live donors this week",
+      initial: 1286,
+      minIncrement: 3,
+      maxIncrement: 8,
+      intervalMs: 6500,
+      suffix: "people",
+    },
+    socialProof: [
+      { id: "today", metric: "142", caption: "Donated today" },
+      { id: "moment", metric: "Every 5 min", caption: "A meal is funded" },
+      { id: "rating", metric: "4.9★", caption: "Community rating" },
+    ],
   },
   usp: [
     "£1 = One Meal",

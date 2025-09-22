@@ -30,6 +30,19 @@ const TR_CONTENT: LandingContent = {
       video: "/videos/hero-loop.mp4",
       alt: "Bir gönüllünün etrafında toplanmış kurtarılan köpekler",
     },
+    liveCounter: {
+      label: "Bu hafta canlı bağışçı",
+      initial: 1286,
+      minIncrement: 3,
+      maxIncrement: 8,
+      intervalMs: 6500,
+      suffix: "kişi",
+    },
+    socialProof: [
+      { id: "today", metric: "142", caption: "Bugün bağış yaptı" },
+      { id: "moment", metric: "Her 5 dk", caption: "Bir öğün fonlanıyor" },
+      { id: "rating", metric: "4.9★", caption: "Topluluk puanı" },
+    ],
   },
   usp: [
     "£1 = Bir Öğün",

@@ -24,11 +24,11 @@ Key scripts:
 
 ## Motion & Accessibility
 
-- Smooth scrolling + scroll-snap rails use [`lenis`](https://www.npmjs.com/package/lenis) and GSAP, but automatically disable when `prefers-reduced-motion` is active.
-- Hero and “How it works” media swap from AVIF poster → muted MP4 only when in view; reduced motion keeps the still image.
-- CTA, amount chips, and FAQ accordions expose focus rings and keyboard control; only the coral primary button carries motion shadows.
-- Both `/` and `/tr` share the same motion pipeline through the exported `Landing` component.
-- Pointer-tracked gradient glows and magnetic CTA hovers run only when motion is allowed (handled by `usePointerShift`).
+- Smooth scrolling + scroll-snap rails use [`lenis`](https://www.npmjs.com/package/lenis) and GSAP, ancak `prefers-reduced-motion` açık olduğunda otomatik devre dışı kalır.
+- Hero / “How it works” medyası görünümde AVIF poster → muted MP4’a swap olur; reduce açıkken poster sabit kalır.
+- CTA, tutar chip’leri ve SSS akordeonları klavye/focus desteğini korur; coral CTA tek animasyonlu elemandır.
+- Hem `/` hem `/tr` rotası aynı `Landing` motion pipeline’ını paylaşır.
+- Pointer-tracked glow, magnetik CTA hover ve exit-intent modal animasyonları yalnız hareket izinliyse çalışır.
 
 ## Content & CTA Wiring
 
@@ -36,6 +36,7 @@ Adjust copy, stats, and links in `app/page.tsx`:
 - Update the `EN_CONTENT` / `TR_CONTENT` objects for copy, media paths, and CTA destinations.
 - Asset budget: hero + step/story videos ≤1.2 MB muted loops; posters exported as AVIF/WebP in `public/images`.
 - Event tracking helper `trackEvent` pushes to `dataLayer` when present—wire analytics by reading those custom events.
+- Hero `liveCounter` config drives the rolling donor ticker; update increments/interval to match prod data.
 
 ## QA Checklist
 
@@ -43,5 +44,6 @@ Before shipping changes:
 - `npm run lint -- --max-warnings 0`
 - `npx tsc --noEmit`
 - Smoke the scroll-snap hero rail (hero → how it works → stories → impact) with and without reduced motion.
-- Validate hero media swap (poster → video) and story clips respect `prefers-reduced-motion`.
+- Validate hero media swap (poster → video), live counter, and story clips respect `prefers-reduced-motion`.
+- Trigger hover + exit intent on desktop to confirm modal shows once and CTA events fire.
 - Run Lighthouse mobile (performance ≥90, accessibility ≥95) once final assets drop.
