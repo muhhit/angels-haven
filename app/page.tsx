@@ -298,6 +298,22 @@ function FloatingPaws() {
   );
 }
 
+function HeroVideo({ src, poster }: { src: string; poster: string }) {
+  return (
+    <video
+      className="absolute inset-0 h-full w-full object-cover"
+      autoPlay
+      loop
+      muted
+      playsInline
+      poster={poster}
+    >
+      <source src={src} type="video/mp4" />
+      Your browser does not support the video tag.
+    </video>
+  );
+}
+
 function ScrollVideo({ src, poster }: { src: string; poster: string }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -452,44 +468,62 @@ export default function Home() {
 
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <Image src="/images/hero-rescue.png" alt="Tülay comforting a rescued dog" fill className="object-cover" priority />
-          <div className="absolute inset-0 bg-gradient-to-br from-ink/88 via-ink/65 to-ink/25" />
-          <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-secondary/25 blur-3xl" />
-          <div className="absolute -bottom-32 right-10 h-96 w-96 rounded-full bg-primary/40 blur-3xl" />
+          <HeroVideo src="/videos/hero-loop.mp4" poster="/images/story-after.png" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0f1f19]/85 via-[#102b22]/70 to-[#1d4437]/60" />
+          <div className="absolute -top-32 -left-24 h-96 w-96 rounded-full bg-secondary/30 blur-3xl" />
+          <div className="absolute bottom-[-10%] right-[-5%] h-[26rem] w-[26rem] rounded-full bg-primary/35 blur-3xl" />
           <FloatingPaws />
         </div>
-        <div className="section-shell relative flex min-h-[72vh] flex-col gap-12 py-24 text-white sm:py-32">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: "easeOut" }} className="max-w-3xl space-y-7">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-[0.32em] text-white/90">
-              Angel Haven · UK & TR
-            </span>
-            <h1 className="heading-font text-4xl leading-[1.05] text-white drop-shadow-2xl sm:text-5xl md:text-[3.5rem]">{heroContent.headline}</h1>
-            <p className="text-lg text-white/85 sm:text-xl">{heroContent.subheadline}</p>
+        <div className="section-shell relative flex min-h-[78vh] flex-col justify-center gap-12 py-24 text-white sm:py-36">
+          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: "easeOut" }} className="max-w-3xl space-y-8">
+            <div className="inline-flex items-center gap-3 rounded-full bg-white/15 px-5 py-2 text-xs font-semibold uppercase tracking-[0.32em] text-white/90">
+              <span>Angel Haven</span>
+              <span className="h-1 w-1 rounded-full bg-white/60" />
+              <span>UK & Turkey</span>
+            </div>
+            <div className="space-y-5">
+              <motion.h1
+                className="heading-font text-[3.4rem] leading-[1.03] text-white drop-shadow-[0_35px_60px_rgba(0,0,0,0.45)] sm:text-[4rem]"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1.2, ease: "easeOut" }}
+              >
+                {heroContent.headline}
+              </motion.h1>
+              <p className="max-w-2xl text-lg text-white/85 sm:text-xl">{heroContent.subheadline}</p>
+            </div>
             <div className="flex flex-wrap items-center gap-4">
               <a
                 href={CTA_PRIMARY}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-secondary px-7 py-3 text-base font-semibold text-ink shadow-[0_20px_50px_rgba(20,63,48,0.25)] transition hover:bg-secondary/90"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-secondary px-8 py-3 text-base font-semibold text-ink shadow-[0_25px_55px_rgba(20,63,48,0.3)] transition hover:bg-secondary/90"
               >
                 {heroContent.primaryCta}
               </a>
               <a
                 href={CTA_PRIMARY}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/70 px-7 py-3 text-base font-semibold text-white transition hover:bg-white/10"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/70 px-8 py-3 text-base font-semibold text-white transition hover:bg-white/10"
               >
                 Donate in 1 Click
               </a>
             </div>
-            <p className="text-sm text-white/75">{heroContent.trustLine}</p>
-            <a
-              href={CTA_FACEBOOK}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-white/80 underline-offset-4 hover:text-white hover:underline"
-            >
-              Join our Facebook group for daily updates →
-            </a>
+            <div className="flex flex-wrap items-center gap-6 text-sm text-white/75">
+              <p>{heroContent.trustLine}</p>
+              <a href={CTA_FACEBOOK} className="inline-flex items-center gap-2 text-sm font-semibold text-white underline-offset-4 hover:underline">
+                Join our Facebook group for daily updates →
+              </a>
+            </div>
           </motion.div>
-          <div className="rounded-full bg-white/10 px-5 py-3 text-sm font-semibold text-white/80 shadow-[0_15px_35px_rgba(17,36,27,0.25)] backdrop-blur">
-            {heroContent.proofBar}
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+            className="flex flex-wrap gap-4 rounded-full bg-white/10 px-6 py-3 text-sm font-semibold text-white/85 shadow-[0_15px_35px_rgba(17,36,27,0.25)] backdrop-blur"
+          >
+            <span className="inline-flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-secondary" />
+              {heroContent.proofBar}
+            </span>
+          </motion.div>
         </div>
       </section>
 
