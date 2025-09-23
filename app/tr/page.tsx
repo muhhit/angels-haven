@@ -4,14 +4,14 @@ import { Landing, type LandingContent } from "../page";
 
 const CTA_PRIMARY = "https://www.paypal.com/donate";
 const CTA_REPORT = "https://example.com/angels-haven-transparency.pdf";
-const CTA_COMMUNITY = "https://www.facebook.com";
+const CTA_COMMUNITY = "https://www.facebook.com/groups/480707493946285";
 
 const TR_CONTENT: LandingContent = {
   hero: {
     eyebrow: "Angels Haven • Sahiplen ↔ Sponsor Ol",
     headline: "Sahiplen. Sponsor ol. Kurtarma hattını canlı tut.",
     subheadline: "Türkiye’de kurtarılan canlara yuva bul ya da uçuş fonunu mikro bağışlarla tamamla.",
-    summary: "Şeffaf süreçler • DEFRA uyumlu seyahat • Haftalık canlı yayın",
+    summary: "Charity Commission #1204821 • DEFRA uyumlu seyahat • Haftalık canlı yayın",
     ctaLabel: "Sahiplenme dosyalarını aç",
     ctaHref: "#adopt",
     donateAmounts: [1, 8, 25, 100],
@@ -44,6 +44,13 @@ const TR_CONTENT: LandingContent = {
         href: "mailto:hello@angelshaven.org?subject=Fethiye%20ziyaret%20talebi",
         icon: "visit",
       },
+      {
+        id: "join-group",
+        label: "Facebook grubuna katıl",
+        caption: "14,6 bin gönüllü günlük güncellemelerde",
+        href: CTA_COMMUNITY,
+        icon: "community",
+      },
     ],
     media: {
       poster: "/images/hero-poster.avif",
@@ -69,8 +76,8 @@ const TR_CONTENT: LandingContent = {
           alt: "Yeni aileleriyle buluşan köpekler",
         },
       },
-      { id: "members", metric: "💙 2.847 aylık", caption: "Otomatik sponsorlar" },
-      { id: "rating", metric: "⭐ 4.9/5", caption: "Şeffaflık puanı" },
+      { id: "group", metric: "👥 14,6 bin gönüllü", caption: "Facebook kurtarma merkezimizde aktif" },
+      { id: "charity", metric: "Charity #1204821", caption: "UK Charity Commission kayıtlı" },
     ],
     urgency: {
       remainingLabel: "Uçuşa hazır köpek",
@@ -140,7 +147,7 @@ const TR_CONTENT: LandingContent = {
       copy: "Fethiye’de market önünde bulundu. Mikro bağışlar mamayı, aşıları ve Londra uçuşunu karşıladı.",
       stat: "14. Gün • Foster kanepesinde",
       media: {
-        before: { poster: "/images/story-before.png", alt: "Mila kurtarma öncesi" },
+        before: { poster: "/images/hero-rescue.png", alt: "Mila kurtarma öncesi" },
         after: { poster: "/images/story-mila.avif", alt: "Mila yeni yuvasında" },
         clip: { poster: "/images/story-mila.avif", video: "/videos/story-mila.mp4", alt: "Mila video klibi" },
       },
@@ -153,7 +160,7 @@ const TR_CONTENT: LandingContent = {
       copy: "Antalya’da trafik kazası sonrası topluluk ameliyatı, rehabilitasyonu ve Brighton yolculuğunu finanse etti.",
       stat: "28. Gün • Sahiplendirmeye hazır",
       media: {
-        before: { poster: "/images/story-before.png", alt: "Duman tedavi öncesi" },
+        before: { poster: "/images/hero-rescue.png", alt: "Duman tedavi öncesi" },
         after: { poster: "/images/story-duman.avif", alt: "Duman iyileştikten sonra" },
         clip: { poster: "/images/story-duman.avif", video: "/videos/story-duman.mp4", alt: "Duman video klibi" },
       },
@@ -234,6 +241,276 @@ const TR_CONTENT: LandingContent = {
       donateHref: CTA_PRIMARY,
     },
   },
+  sanctuary: {
+    eyebrow: "Tülay'ın Çiftliği • İzmir kırsalı",
+    headline: "Her kurtarma Avrupa'ya uçmadan önce burada nefes alıyor.",
+    body: "Kurucumuz Tülay ve gönüllüler dört dönümlük çiftliği bir iyileşme köyüne dönüştürüyor; sokak canlarının yaralarını sarıyor, kaslarını güçlendiriyor ve gelecekteki ailelerine günlük videolar çekiyor.",
+    highlight: "Gün doğumu kontrolleri, ilikli kemik sulu akşam mamaları ve WhatsApp videoları ilk günden ailelerle paylaşılır.",
+    image: "/images/founder-tulay.png",
+    quote: {
+      text: "Onları yeniden koşarken görmek, gönderdiğiniz her £1'in tablo değil kalp atışı olduğunu kanıtlıyor.",
+      name: "Tülay Arslan",
+      role: "Kurucu & sanctuary sorumlusu",
+    },
+    pillars: [
+      {
+        id: "triage",
+        title: "Gün doğumu triyajı",
+        copy: "Yaralar temizlenir, ilaçlar verilir ve veteriner turu günün ilk saatinde planlanır.",
+      },
+      {
+        id: "social",
+        title: "Aile sosyalleşmesi",
+        copy: "Mahalleli ve okul gönüllüleri çayırlarda saatler geçirir; ürkek patiler yeniden güvenmeyi öğrenir.",
+      },
+      {
+        id: "travel",
+        title: "Uçuş provası",
+        copy: "DEFRA evrakları, kafes alıştırması ve havalimanı pratikleriyle yolculuk günü tanıdık gelir.",
+      },
+      {
+        id: "updates",
+        title: "Günlük güncellemeler",
+        copy: "Kısa videolar ve kilometre taşları her akşam sponsor ve aile gruplarına düşer.",
+      },
+    ],
+    stats: [
+      { id: "rehab", value: "36", label: "Bu ay rehabilitasyon yataklarında" },
+      { id: "escorts", value: "12", label: "AB yolculukları için gönüllü refakatçi" },
+      { id: "acres", value: "4", label: "Dönüm ağaçlık iyileşme alanı" },
+    ],
+    cta: {
+      primaryLabel: "Bir iyileşme gecesini sponsor et",
+      primaryHref: CTA_PRIMARY,
+      secondaryLabel: "Tülay'a erzak gönder",
+      secondaryHref: "mailto:hello@angelshaven.org?subject=Sanctuary%20erzak%20deste%C4%9Fi",
+      note: "Bağışların %100'ü mama, ilaç ve uçuş hazırlığa gider.",
+    },
+  },
+  community: {
+    eyebrow: "Topluluk • Şeffaflık",
+    headline: "14.682 kişi Angels Haven'ı her gece canlı izliyor.",
+    description: "Özel Facebook grubumuz; Tülay'ın çiftliğinden canlı yayınlar, veteriner faturaları, uçuş listeleri ve bağışçı soru-cevaplarını herkesten önce paylaşır.",
+    fb: {
+      members: "14.682 üye • günde 32 paylaşım",
+      href: CTA_COMMUNITY,
+      label: "Angels Haven Kurtarma Güncellemeleri",
+      proof: "Her üye kimlik doğrulamasından geçer. Haftalık sabit gönderilerde defterler, faturalar ve refakatçi listeleri indirilebilir.",
+    },
+    highlights: [
+      {
+        id: "livestreams",
+        title: "Her akşam canlı kontroller",
+        copy: "Tülay, saat 21.00'de İzmir'den yayına girer; padok turu, ilaç çizelgesi ve mama hazırlığını gösterir.",
+      },
+      {
+        id: "escorts",
+        title: "Refakatçi koordinasyon hub'ı",
+        copy: "Şablonlar, paket listeleri ve canlı havaalanı sohbetleri yeni refakatçilerin Londra, Berlin, Amsterdam uçuşlarına eşlik etmesini kolaylaştırır.",
+      },
+      {
+        id: "ledger",
+        title: "Açık defter başlıkları",
+        copy: "Stripe ve PayPal dökümleri her ayın ilk günü; veteriner, mama ve taşıma kalemleriyle paylaşılır.",
+      },
+      {
+        id: "alerts",
+        title: "Hızlı müdahale uyarıları",
+        copy: "Kritik kurtarmalarda @everyone etiketleri açılır; hedefler ortalama 90 dakikanın altında tamamlanır.",
+      },
+    ],
+    stats: [
+      { id: "escorts", value: "312", label: "Topluluk gönüllülerinin organize ettiği uçuş" },
+      { id: "donors", value: "18.247", label: "Stripe & PayPal'da takip edilen düzenli bağışçı" },
+      { id: "support", value: "%96", label: "24 saat içinde çözülen destek talebi" },
+      { id: "streams", value: "365", label: "Son 12 ayda yayınlanan canlı yayın" },
+    ],
+    cta: {
+      label: "Facebook grubuna katıl",
+      href: CTA_COMMUNITY,
+      secondaryLabel: "Son etki raporunu indir",
+      secondaryHref: CTA_REPORT,
+    },
+  },
+  testimonials: [
+    {
+      id: "amelia-tr",
+      quote: "Yılda iki kez uçuşa refakat ediyorum—Heathrow'a inişimizi canlı izlediler ve vet kontrolü daha piste inmeden fonlandı.",
+      name: "Amelia R., Londra",
+      role: "Aylık bağışçı & foster",
+      rating: 5,
+      media: {
+        poster: "/images/story-mila.avif",
+        video: "/videos/story-mila.mp4",
+        alt: "Amelia'nın uçuş deneyimi",
+      },
+    },
+    {
+      id: "umit-tr",
+      quote: "Her makbuz birkaç saat içinde grupta. Açık defteri görünce bağışımı yıllık plana yükselttim.",
+      name: "Ümit K., İzmir",
+      role: "Sanctuary gönüllüsü",
+      rating: 4.9,
+      media: {
+        poster: "/images/story-duman.avif",
+        video: "/videos/story-duman.mp4",
+        alt: "Ümit'in sanctuary anlatımı",
+      },
+    },
+    {
+      id: "niamh-tr",
+      quote: "Kurumsal fonlarımızı Angels Haven'a ayırdık çünkü yönetişim paketleri ve canlı soru-cevaplar hiçbir boşluk bırakmıyor.",
+      name: "Niamh F., Edinburgh",
+      role: "Kurumsal sosyal sorumluluk lideri",
+      rating: 4.8,
+      media: {
+        poster: "/images/step-impact.avif",
+        video: "/videos/step-impact.mp4",
+        alt: "Niamh'in CSR değerlendirmesi",
+      },
+    },
+  ],
+  securityBadges: [
+    { id: "ssl", label: "TLS 1.3", description: "Cloudflare + Next.js ile 256-bit şifreleme" },
+    { id: "pci", label: "PCI DSS", description: "Stripe ve PayPal Level 1 ödeme geçidi" },
+    { id: "gdpr", label: "GDPR Uyumu", description: "Veri AB bölgelerinde saklanır, izin bazlı takip" },
+    { id: "trust", label: "Şeffaflık Paneli", description: "Haftalık canlı defterler Facebook grubunda" },
+  ],
+  mediaRibbon: [
+    { id: "guardian-feature", label: "Mikro bağışlarla uçuşlar", outlet: "The Guardian", href: "https://www.theguardian.com/uk" },
+    { id: "bbc-late", label: "İstanbul gece görevleri", outlet: "BBC Radio London", href: "https://www.bbc.co.uk/sounds" },
+    { id: "wired-panel", label: "Şeffaflık panelleri güveni geri getiriyor", outlet: "WIRED Impact", href: "https://www.wired.co.uk" },
+  ],
+  founder: {
+    eyebrow: "Tülay ile tanış",
+    headline: "Türk çiftliğini yaşam hattına dönüştüren havacılık lojistikçisi",
+    paragraphs: [
+      "Tülay Arslan, kıyı Türkiye ile İngiltere/AB arasındaki kurtarma koridorlarını resmileştirmek için on yıllık havayolu lojistik kariyerini geride bıraktı.",
+      "Her akşam canlı yayınlarla yemek, tedavi ve ihracat evraklarını paylaşıyor; böylece bağışçılar hiçbir £1'in nereye gittiğini merak etmiyor.",
+    ],
+    credentials: [
+      { id: "defra", label: "DEFRA Sertifikalı", detail: "2016'dan beri evcil hayvan seyahat uzmanı" },
+      { id: "flight", label: "435 Uçuş", detail: "Refakatçi koordinasyonu" },
+      { id: "ops", label: "Operasyon Kılavuzları", detail: "24 adımlı acil bakım protokolü" },
+      { id: "languages", label: "Çift dilli", detail: "UK bağışçı + TR saha ekiplerini birleştiriyor" },
+    ],
+    stats: [
+      { id: "dogs", value: "182", caption: "2021'den beri yuvalandırılan can" },
+      { id: "livestreams", value: "365", caption: "Son 12 ayda yayınlanan canlı yayın" },
+      { id: "volunteers", value: "94", caption: "Aktif sanctuary & refakatçi gönüllü" },
+    ],
+    image: "/images/founder-tulay.png",
+    video: "/videos/hero-pack.mp4",
+  },
+  certificates: [
+    {
+      id: "charity-commission",
+      title: "Charity Commission Kaydı",
+      issuer: "Charity Commission for England & Wales",
+      year: "2024",
+      summary: "İngiltere hayır kurumu yasasına uygunluğu belgeleyen resmi kayıt.",
+      href: "https://register-of-charities.charitycommission.gov.uk/charity-details/?regid=1204821",
+    },
+    {
+      id: "hackney-cvs",
+      title: "Hackney CVS Üyeliği",
+      issuer: "Hackney Council for Voluntary Service",
+      year: "2024",
+      summary: "Yerel güvenlik ve yönetişim ağında doğrulanmış üyelik.",
+      href: "https://hcvs.org.uk",
+    },
+    {
+      id: "defra-license",
+      title: "DEFRA Hayvan Taşıma Lisansı",
+      issuer: "Department for Environment, Food & Rural Affairs",
+      year: "2025",
+      summary: "DEFRA TRACES kapsamında sınır ötesi taşıma yetkisi.",
+      href: CTA_REPORT,
+    },
+    {
+      id: "audit-letter",
+      title: "Paws & Claws LLP FY23 Denetimi",
+      issuer: "Paws & Claws LLP",
+      year: "2024",
+      summary: "Gelir, rezerv ve acil fon dağıtımlarına dair bağımsız doğrulama.",
+      href: CTA_REPORT,
+    },
+    {
+      id: "insurance",
+      title: "Global Rescue Sigorta Poliçesi",
+      issuer: "Global Rescue Underwriters",
+      year: "2025",
+      summary: "Refakatçi, sanctuary operasyonu ve kargo sorumluluğunu kapsayan poliçe.",
+      href: CTA_REPORT,
+    },
+  ],
+  donorWall: [
+    { id: "amelia-donor", name: "Amelia R.", amount: 250, city: "Londra, UK", recurring: true, since: "2021" },
+    { id: "umit-donor", name: "Ümit K.", amount: 140, city: "İzmir, TR", recurring: true, since: "2022" },
+    { id: "morgan", name: "Morgan L.", amount: 500, city: "Manchester, UK", recurring: false, since: "2024" },
+    { id: "melis", name: "Melis D.", amount: 75, city: "İstanbul, TR", recurring: true, since: "2023" },
+  ],
+  globalStats: [
+    { id: "meals", label: "Servis edilen öğün", value: "72 bin", detail: "Fethiye, Dalyan, İzmir rotalarında kayıt altına alındı" },
+    { id: "med", label: "Tıbbi vaka", value: "418", detail: "Acil ameliyatlar ortalama 6 saatte fonlandı" },
+    { id: "escorts", label: "Gönüllü refakatçi", value: "312", detail: "Topluluk tarafından koordine edilen uçuşlar" },
+    { id: "recurring", label: "Düzenli bağışçı", value: "18.247", detail: "Stripe + PayPal autopay destekçileri koridoru canlı tutuyor" },
+  ],
+  partners: [
+    { id: "defra", name: "DEFRA", href: "https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs", description: "Pet travel uyum ortağı" },
+    { id: "paws-claws", name: "Paws & Claws LLP", href: "https://example.com/paws-and-claws", description: "Bağımsız denetim firması" },
+    { id: "global-rescue", name: "Global Rescue Underwriters", href: "https://example.com/global-rescue", description: "Taşıma sigortası" },
+    { id: "hackney-cvs", name: "Hackney CVS", href: "https://hcvs.org.uk", description: "Güvenlik ağı" },
+    { id: "vet-network", name: "TR Vet Ağı", href: "https://example.com/tr-vet", description: "18 klinikten oluşan tıbbi kolektif" },
+  ],
+  emergency: {
+    title: "7 can uçağa hazır ama charter ücreti tamamlanmadı",
+    description: "Her £120; DEFRA kafesleri, son vet kontrolleri ve gönüllü refakatçileri finanse eder. %100 olunca Pazar gecesi Heathrow hattı açılıyor.",
+    goal: 8400,
+    raised: 6240,
+    currency: "£",
+    dogsWaiting: 7,
+    deadline: "Pazar 19:00 GMT",
+    ctaLabel: "Son adımı fonla",
+    ctaHref: CTA_PRIMARY,
+  },
+  givingCalculator: {
+    defaultAmount: 25,
+    note: "Düzenli bağışçılar canlı makbuzlar, kafes manifestoları ve özel yayın uyarıları alır.",
+    steps: [
+      { amount: 8, label: "Mama & ilaç", description: "Ayda 30 öğün yüksek kalorili mama ve antibiyotikleri karşılar." },
+      { amount: 25, label: "Uçuş payı", description: "Bir köpeğin DEFRA kafesi ve ihracat evrakının üçte birini sponsorlar." },
+      { amount: 50, label: "Kurtarma koridoru", description: "Gece ambulansını acil toplama için hazır tutar." },
+      { amount: 100, label: "Tam taşıma", description: "Sanctuary'den Heathrow'a kadar tüm yolculuğu ve refakatçiyi fonlar." },
+    ],
+  },
+  impact24h: {
+    headline: "Son 24 saatin etkisi",
+    totalRaised: 2470,
+    currency: "£",
+    supporters: 186,
+    flightsBooked: 3,
+  },
+  reels: [
+    {
+      id: "tulay-morning",
+      title: "Tülay ile gün doğumu turu",
+      description: "İlaç dozları, kemik suyu hazırlığı ve padok güncellemeleri çiftlikten canlı aktarılır.",
+      media: { poster: "/images/story-mila.avif", video: "/videos/story-mila.mp4", alt: "Tülay barınakta köpeklerle ilgileniyor" },
+    },
+    {
+      id: "flight-escort",
+      title: "Heathrow öncesi refakat brifingi",
+      description: "Gönüllüler kafes yüklemesi ve DEFRA evraklarını havaalanı öncesi prova eder.",
+      media: { poster: "/images/story-duman.avif", video: "/videos/story-duman.mp4", alt: "Gönüllüler kafesleri hazırlıyor" },
+    },
+    {
+      id: "adopter-update",
+      title: "Londra'daki ilk kanepe gecesi",
+      description: "Nova’nın yeni ailesi ilk geceyi ve vet kontrolü makbuzlarını paylaşıyor.",
+      media: { poster: "/images/step-impact.avif", video: "/videos/step-impact.mp4", alt: "Adoptör aile güncelleme veriyor" },
+    },
+  ],
   bento: [
     {
       id: "meals",
@@ -299,7 +576,7 @@ const TR_CONTENT: LandingContent = {
     headline: "Bugün bir köpeği daha güvende tut.",
     body: "£1; mamayı, tedaviyi ve yolculuğu tetikler. Her ay 2 ton yardımı hareket ettiren bağışçılara katıl.",
     ctaLabel: "£1 Bugün Besler",
-    secondaryLabel: "Topluluk akışına git",
+    secondaryLabel: "Facebook grubuna katıl",
     secondaryHref: CTA_COMMUNITY,
     donateHref: CTA_PRIMARY,
   },
@@ -325,10 +602,17 @@ const TR_CONTENT: LandingContent = {
         detail: "Tüm gönüllüler, taşıma ve foster ekipleri 12 ayda bir yeniden taranır.",
         proof: "Uyum günlüğü bağışçı şeffaflık panelinde herkese açık.",
       },
+      {
+        id: "community-proof",
+        title: "Facebook grubunda canlı defterler",
+        detail: "Sabitlenen şeffaflık gönderileri aylık XLS dökümleri, canlı yayın arşivi ve refakatçi listelerini içerir.",
+        proof: "Facebook grubundaki Şeffaflık rehberine (Modül 01–03) göz atın.",
+      },
     ],
     metrics: [
       { id: "meals", label: "Aylık öğün", value: "2.184", caption: "Fethiye, Dalyan, İzmir güzergahları GPS kayıtlı." },
-      { id: "rehomed", label: "Yuvalandırılan köpek", value: "182", caption: "2021’den beri UK & AB sahiplendirme." },
+      { id: "flights", label: "Refakat edilen uçuş", value: "312", caption: "Topluluk hub'ında gönüllüler tarafından koordine edildi." },
+      { id: "donors", label: "Düzenli bağışçı", value: "18.247", caption: "Stripe + PayPal autopay destekçileri üç aylık kontrol altında." },
       { id: "rating", label: "Şeffaflık puanı", value: "4.9 / 5", caption: "Trustpilot + Google ortalaması." },
     ],
     accreditations: [
@@ -358,6 +642,7 @@ const TR_CONTENT: LandingContent = {
       { label: "Telefon", value: "+44 20 7946 0958", href: "tel:+442079460958" },
       { label: "Merkez", value: "18 Market Walk, Islington, London N1 7SR" },
       { label: "TR Operasyon", value: "Calis Mah. 112. Sokak No:4, Fethiye / Muğla" },
+      { label: "Facebook", value: "Kurtarma Güncellemeleri", href: CTA_COMMUNITY },
     ],
     proofDocument: {
       label: "Şeffaflık paketini indir",
@@ -372,6 +657,7 @@ const TR_CONTENT: LandingContent = {
     phone: "+44 20 7946 0958",
     hours: "Çağrı hattı: Pzt–Cmt 08:00–20:00 GMT",
     socials: [
+      { label: "Facebook Grubu", href: CTA_COMMUNITY },
       { label: "Instagram", href: "https://instagram.com/angelshavenpaws" },
       { label: "YouTube", href: "https://youtube.com/@angelshaven" },
       { label: "TikTok", href: "https://www.tiktok.com/@angelshaven" },
