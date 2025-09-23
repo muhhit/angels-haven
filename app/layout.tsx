@@ -3,6 +3,42 @@ import Script from "next/script";
 import { Inter, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "NGO",
+  "name": "Angels Haven for Paws",
+  "url": "https://angels-haven.vercel.app",
+  "logo": "https://angels-haven.vercel.app/images/hero-poster.avif",
+  "slogan": "£1 = One Meal",
+  "email": "support@angelshaven.org",
+  "telephone": "+44 20 7946 0958",
+  "areaServed": ["United Kingdom", "Turkey"],
+  "foundingDate": "2021-01-12",
+  "sameAs": [
+    "https://instagram.com/angelshavenpaws",
+    "https://youtube.com/@angelshaven",
+    "https://www.linkedin.com/company/angelshaven"
+  ],
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "18 Market Walk",
+    "addressLocality": "London",
+    "postalCode": "N1 7SR",
+    "addressCountry": "GB"
+  },
+  "memberOf": {
+    "@type": "Organization",
+    "name": "Hackney CVS"
+  },
+  "knowsAbout": [
+    "Dog rescue",
+    "Animal welfare",
+    "Micro-donations",
+    "Transparency reporting"
+  ],
+  "taxID": "1204821"
+};
+
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -53,6 +89,9 @@ export default function RootLayout({
   t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
   y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
 })(window, document, "clarity", "script", "tehnfzseua");`}
+        </Script>
+        <Script id="ld-organization" type="application/ld+json" strategy="afterInteractive">
+          {JSON.stringify(structuredData)}
         </Script>
         {children}
       </body>

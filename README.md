@@ -47,3 +47,18 @@ Before shipping changes:
 - Validate hero media swap (poster → video), live counter, and story clips respect `prefers-reduced-motion`.
 - Trigger hover + exit intent on desktop to confirm modal shows once and CTA events fire.
 - Run Lighthouse mobile (performance ≥90, accessibility ≥95) once final assets drop.
+
+## Trust & Compliance
+
+- Home hero now surfaces live donor ticker, urgency bar, and social proof cards. Update copy via `hero.socialProof`, `hero.urgency`, and `hero.ticker` inside `app/page.tsx`.
+- The new `trust` block renders Charity Commission proof, audit notes, team bios, and media mentions—refresh assets and contact details there.
+- Footer exposes verified contact, registration number, and quick links to legal/press pages.
+
+## Additional Routes
+
+- `/about` — mission, timeline, and team bios.
+- `/transparency` — document downloads plus live data feeds.
+- `/press` — media contact and asset bundles.
+- `/privacy` & `/terms` — compliance text managed in repo.
+
+Update these pages when documents, contact info, or policies change to keep trust signals accurate.
