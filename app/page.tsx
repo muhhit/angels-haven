@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useSpring } from "framer-motion";
 import Lenis from "lenis";
@@ -23,16 +23,25 @@ type StatMetric = {
   suffix?: string;
 };
 
+type HeroQuickAction = {
+  id: string;
+  label: string;
+  caption: string;
+  href: string;
+  icon: "adopt" | "sponsor" | "visit" | "donate";
+};
+
 type HeroContent = {
   eyebrow: string;
   headline: string;
   subheadline: string;
   summary: string;
   ctaLabel: string;
+  ctaHref: string;
   donateHref: string;
   donateAmounts: number[];
   stats: StatMetric;
-  social: { label: string; href: string }[];
+  quickActions: HeroQuickAction[];
   media: MediaAsset;
   defaultSelectionLabel: string;
   liveCounter: {
@@ -92,6 +101,38 @@ type BentoItem = {
   copy: string;
   ctaLabel: string;
   href: string;
+};
+
+type AdoptionPet = {
+  id: string;
+  name: string;
+  age: string;
+  breed: string;
+  temperament: string;
+  story: string;
+  image: string;
+  badge?: string;
+  medicalNotes?: string;
+  adoptHref: string;
+  sponsorHref: string;
+};
+
+type AdoptionContent = {
+  eyebrow: string;
+  headline: string;
+  intro: string;
+  cta: {
+    adopt: { label: string; href: string };
+    sponsor: { label: string; href: string };
+  };
+  pets: AdoptionPet[];
+  steps: { id: string; title: string; description: string }[];
+  fallback: {
+    headline: string;
+    copy: string;
+    donateLabel: string;
+    donateHref: string;
+  };
 };
 
 type FAQItem = {
@@ -182,6 +223,7 @@ export type LandingContent = {
   usp: string[];
   steps: StepItem[];
   stories: StoryItem[];
+  adoption: AdoptionContent;
   bento: BentoItem[];
   faq: FAQItem[];
   final: {
@@ -277,11 +319,28 @@ function useSmoothScroll(disabled: boolean) {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (mediaQuery.matches) return;
 
+    const desktopQuery = window.matchMedia("(min-width: 1024px)");
+
     let lenis: Lenis | null = null;
     let rafId: number | null = null;
+    let resizeAttached = false;
 
     const handleScrollUpdate = () => ScrollTrigger.update();
     const handleResize = () => ScrollTrigger.refresh();
+
+    const attachResize = () => {
+      if (!resizeAttached) {
+        window.addEventListener("resize", handleResize, { passive: true });
+        resizeAttached = true;
+      }
+    };
+
+    const detachResize = () => {
+      if (resizeAttached) {
+        window.removeEventListener("resize", handleResize);
+        resizeAttached = false;
+      }
+    };
 
     const startLenis = () => {
       if (lenis) return;
@@ -296,6 +355,7 @@ function useSmoothScroll(disabled: boolean) {
       };
       rafId = requestAnimationFrame(raf);
       lenis.on("scroll", handleScrollUpdate);
+      attachResize();
     };
 
     const stopLenis = () => {
@@ -307,13 +367,32 @@ function useSmoothScroll(disabled: boolean) {
         cancelAnimationFrame(rafId);
         rafId = null;
       }
+      detachResize();
     };
 
-    startLenis();
-    window.addEventListener("resize", handleResize, { passive: true });
+    const handleDesktopToggle = (event: MediaQueryListEvent) => {
+      if (event.matches) {
+        startLenis();
+      } else {
+        stopLenis();
+      }
+    };
+
+    if (desktopQuery.matches) {
+      startLenis();
+    }
+    if (typeof desktopQuery.addEventListener === "function") {
+      desktopQuery.addEventListener("change", handleDesktopToggle);
+    } else {
+      desktopQuery.addListener(handleDesktopToggle);
+    }
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      if (typeof desktopQuery.removeEventListener === "function") {
+        desktopQuery.removeEventListener("change", handleDesktopToggle);
+      } else {
+        desktopQuery.removeListener(handleDesktopToggle);
+      }
       stopLenis();
     };
   }, [disabled]);
@@ -338,7 +417,7 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix?: string }) 
   return <span ref={ref} />;
 }
 
-function MagneticButton({ href, children, className, onHover }: { href: string; children: React.ReactNode; className?: string; onHover?: () => void }) {
+function MagneticButton({ href, children, className, onHover }: { href: string; children: ReactNode; className?: string; onHover?: () => void }) {
   const prefersReducedMotion = usePrefersReducedMotion();
   const ref = useRef<HTMLAnchorElement | null>(null);
 
@@ -468,12 +547,27 @@ function RailIndicators() {
 }
 
 function HeroMedia({ media, active, prefersReducedMotion }: { media: MediaAsset; active: boolean; prefersReducedMotion: boolean }) {
-  const shouldPlay = active && !prefersReducedMotion && Boolean(media.video);
+  const [canPlayVideo, setCanPlayVideo] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const query = window.matchMedia("(min-width: 640px)");
+    setCanPlayVideo(query.matches);
+    const handler = (event: MediaQueryListEvent) => setCanPlayVideo(event.matches);
+    if (typeof query.addEventListener === "function") {
+      query.addEventListener("change", handler);
+      return () => query.removeEventListener("change", handler);
+    }
+    query.addListener(handler);
+    return () => query.removeListener(handler);
+  }, []);
+
+  const shouldPlay = active && !prefersReducedMotion && Boolean(media.video) && canPlayVideo;
   return (
     <div className="absolute inset-0 overflow-hidden">
       <Image src={media.poster} alt={media.alt} fill priority className={`object-cover transition-opacity duration-700 ${shouldPlay ? "opacity-0" : "opacity-100"}`} />
       {shouldPlay && media.video && (
-        <video className="absolute inset-0 h-full w-full object-cover" autoPlay muted loop playsInline poster={media.poster}>
+        <video className="absolute inset-0 h-full w-full object-cover" autoPlay muted loop playsInline preload="auto" poster={media.poster}>
           <source src={media.video} type="video/mp4" />
         </video>
       )}
@@ -519,6 +613,11 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent; pref
       gsap.set(container.querySelectorAll("[data-hero-animate]") as NodeListOf<HTMLElement>, { opacity: 1, y: 0 });
       return;
     }
+    const screenQuery = window.matchMedia("(min-width: 768px)");
+    if (!screenQuery.matches) {
+      gsap.set(container.querySelectorAll("[data-hero-animate]") as NodeListOf<HTMLElement>, { opacity: 1, y: 0 });
+      return;
+    }
     const ctx = gsap.context(() => {
       gsap.from("[data-hero-animate]", {
         y: 36,
@@ -560,8 +659,8 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent; pref
           <div className="flex flex-col gap-6" data-hero-animate>
             <div className="flex flex-wrap items-center gap-4">
               <MagneticButton
-                href={hero.donateHref}
-                onHover={() => trackEvent("cta_click_primary", { surface: "hero-hover" })}
+                href={hero.ctaHref}
+                onHover={() => trackEvent("cta_click_primary", { surface: "hero-primary" })}
               >
                 {hero.ctaLabel}
               </MagneticButton>
@@ -569,7 +668,7 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent; pref
                 type="button"
                 className="cta-muted text-xs uppercase tracking-[0.3em] text-white/70"
                 onClick={() => {
-                  trackEvent("cta_click_primary", { surface: "hero-secondary" });
+                  trackEvent("cta_click_secondary", { surface: "hero" });
                   window.open(CTA_REPORT, "_blank");
                 }}
               >
@@ -588,7 +687,7 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent; pref
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45, duration: 0.8, ease: "easeOut" }}
-          className="glass-card flex h-fit flex-col gap-5 rounded-[2.4rem] border border-white/15 bg-white/8 p-6 text-white/80"
+          className="glass-card flex h-fit flex-col gap-6 rounded-[2.4rem] border border-white/15 bg-white/8 p-6 text-white/80"
         >
           <div>
             <p className="text-xs uppercase tracking-[0.35em] text-white/60">{hero.stats.label}</p>
@@ -596,17 +695,39 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent; pref
               <AnimatedCounter value={hero.stats.value} suffix={hero.stats.suffix} />
             </p>
           </div>
-          <div className="flex items-center gap-3 text-sm">
-            {hero.social.map((item) => (
-              <a key={item.label} href={item.href} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 transition hover:border-white/35 hover:text-white" aria-label={item.label}>
-                <SocialIcon label={item.label} />
-              </a>
-            ))}
-          </div>
+          <HeroQuickActions actions={hero.quickActions} />
         </motion.aside>
       </div>
       <ScrollPrompt />
     </section>
+  );
+}
+
+function HeroQuickActions({ actions }: { actions: HeroQuickAction[] }) {
+  if (!actions.length) return null;
+  return (
+    <div className="flex flex-col gap-3 text-sm">
+      <span className="text-xs uppercase tracking-[0.28em] text-white/55">Quick ways to help</span>
+      <div className="flex flex-col gap-3">
+        {actions.map((action) => (
+          <a
+            key={action.id}
+            href={action.href}
+            className="group flex items-start gap-3 rounded-[1.8rem] border border-white/12 bg-white/6 px-4 py-3 transition hover:border-white/35 hover:bg-white/12"
+            onClick={() => trackEvent("hero_quick_action", { id: action.id })}
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white">
+              <QuickActionIcon icon={action.icon} />
+            </span>
+            <span className="flex flex-1 flex-col">
+              <span className="text-sm font-semibold text-white">{action.label}</span>
+              <span className="text-[0.75rem] text-white/65">{action.caption}</span>
+            </span>
+            <span className="mt-1 text-xs uppercase tracking-[0.24em] text-white/45">→</span>
+          </a>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -1155,6 +1276,146 @@ function Stories({ content, prefersReducedMotion }: { content: LandingContent; p
   );
 }
 
+function AdoptionShowcase({
+  content,
+  prefersReducedMotion,
+}: {
+  content: LandingContent["adoption"];
+  prefersReducedMotion: boolean;
+}) {
+  return (
+    <section id="adopt" className="snap-start relative overflow-hidden bg-[#0b1612]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#1c6956_0%,transparent_58%)] opacity-40" aria-hidden />
+      <div className="section-shell relative z-10 flex flex-col gap-12 py-28 text-white">
+        <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="max-w-3xl space-y-5">
+            <span className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+              {content.eyebrow}
+            </span>
+            <h2 className="heading-xl">{content.headline}</h2>
+            <p className="text-base text-white/75">{content.intro}</p>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <MagneticButton
+                href={content.cta.adopt.href}
+                onHover={() => trackEvent("cta_click_primary", { surface: "adoption-primary" })}
+              >
+                {content.cta.adopt.label}
+              </MagneticButton>
+              <button
+                type="button"
+                className="cta-muted inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/8 px-6 py-3 text-xs uppercase tracking-[0.32em] text-white/75 transition hover:border-white/40 hover:text-white"
+                onClick={() => {
+                  trackEvent("cta_click_primary", { surface: "adoption-sponsor" });
+                  window.open(content.cta.sponsor.href, "_blank");
+                }}
+              >
+                {content.cta.sponsor.label}
+              </button>
+            </div>
+          </div>
+          <div className="glass-card h-fit rounded-[2.4rem] border border-white/15 bg-white/8 p-6 text-white/80">
+            <h3 className="heading-sm text-white">Adoption journey in 3 steps</h3>
+            <ul className="mt-4 space-y-4 text-sm text-white/70">
+              {content.steps.map((step) => (
+                <li key={step.id} className="flex items-start gap-3">
+                  <span className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/8 text-xs font-semibold uppercase tracking-[0.24em] text-white/70">
+                    {step.id}
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{step.title}</p>
+                    <p className="text-[0.85rem] text-white/65">{step.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {content.pets.map((pet, index) => (
+            <motion.article
+              key={pet.id}
+              className="group glass-card flex h-full flex-col overflow-hidden rounded-[2.3rem] border border-white/15 bg-white/8"
+              initial={{ opacity: 0, y: 32 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.55, ease: "easeOut", delay: prefersReducedMotion ? 0 : index * 0.08 }}
+            >
+              <div className="relative aspect-[4/5] w-full overflow-hidden">
+                <Image
+                  src={pet.image}
+                  alt={`Portrait of ${pet.name}`}
+                  fill
+                  sizes="(min-width: 1280px) 360px, (min-width: 768px) 45vw, 90vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-[1.05]"
+                />
+                {pet.badge ? (
+                  <span className="absolute left-4 top-4 rounded-full border border-white/20 bg-white/20 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-white backdrop-blur">
+                    {pet.badge}
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex flex-1 flex-col gap-4 p-6 text-white">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="heading-sm text-white">{pet.name}</h3>
+                    <span className="text-xs uppercase tracking-[0.28em] text-white/50">{pet.age}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs text-white/60">
+                    <span className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 uppercase tracking-[0.24em]">
+                      {pet.breed}
+                    </span>
+                    <span className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 uppercase tracking-[0.24em]">
+                      {pet.temperament}
+                    </span>
+                    {pet.medicalNotes ? (
+                      <span className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 uppercase tracking-[0.24em]">
+                        {pet.medicalNotes}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="text-sm text-white/70">{pet.story}</p>
+                </div>
+                <div className="mt-auto flex flex-wrap gap-3">
+                  <a
+                    href={pet.adoptHref}
+                    className="cta-primary inline-flex items-center justify-center px-6 py-2 text-[0.7rem] uppercase tracking-[0.32em]"
+                    onClick={() => trackEvent("cta_click_primary", { surface: "adoption-card", id: pet.id })}
+                  >
+                    Start adoption
+                  </a>
+                  <a
+                    href={pet.sponsorHref}
+                    className="cta-muted inline-flex items-center justify-center rounded-full border border-white/20 px-5 py-2 text-[0.7rem] uppercase tracking-[0.28em] text-white/75"
+                    onClick={() => trackEvent("cta_click_primary", { surface: "adoption-sponsor-card", id: pet.id })}
+                  >
+                    Sponsor {pet.name}
+                  </a>
+                </div>
+              </div>
+            </motion.article>
+          ))}
+        </div>
+        <div className="glass-card flex flex-col gap-4 rounded-[2.4rem] border border-white/15 bg-white/6 p-6 text-white/80 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
+            <h3 className="heading-sm text-white">{content.fallback.headline}</h3>
+            <p className="text-sm text-white/70">{content.fallback.copy}</p>
+          </div>
+          <button
+            type="button"
+            className="cta-primary inline-flex items-center justify-center px-6 py-3 text-xs uppercase tracking-[0.32em]"
+            onClick={() => {
+              trackEvent("cta_click_primary", { surface: "adoption-fallback" });
+              window.open(content.fallback.donateHref, "_blank");
+            }}
+          >
+            {content.fallback.donateLabel}
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Bento({ content }: { content: LandingContent }) {
   return (
     <section id="impact" className="snap-start flex min-h-[100dvh] items-center bg-[#101b16]">
@@ -1312,33 +1573,37 @@ function StickyDonateDock({ label, href }: { label: string; href: string }) {
   );
 }
 
-function SocialIcon({ label }: { label: string }) {
-  const icon = label.toLowerCase();
+function QuickActionIcon({ icon }: { icon: HeroQuickAction["icon"] }) {
   switch (icon) {
-    case "instagram":
+    case "adopt":
       return (
         <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
-          <rect x="3" y="3" width="18" height="18" rx="5" />
-          <circle cx="12" cy="12" r="4.2" />
-          <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none" />
+          <path d="M4.5 12a3.5 3.5 0 1 1 6.8-1.2" />
+          <path d="M19.5 12a3.5 3.5 0 1 0-6.8-1.2" />
+          <path d="M5.4 14.5C6.5 17 9.9 19 12 19s5.5-2 6.6-4.5" strokeLinecap="round" />
         </svg>
       );
-    case "youtube":
+    case "sponsor":
       return (
-        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="currentColor">
-          <path d="M21.6 7.6c-.2-1.2-.9-1.9-2-2C17.6 5.3 12 5.3 12 5.3s-5.6 0-7.6.3c-1.1.1-1.8.8-2 2C2.1 9.6 2 12 2 12s.1 2.4.4 4.4c.2 1.2.9 1.9 2 2 2 .3 7.6.3 7.6.3s5.6 0 7.6-.3c1.1-.1 1.8-.8 2-2 .3-2 .4-4.4.4-4.4s-.1-2.4-.4-4.4ZM10.1 15.2v-6l5.2 3-5.2 3Z" />
+        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <path d="M12 21c6-3.2 8-5.9 8-9.2a4.8 4.8 0 0 0-8-3.4 4.8 4.8 0 0 0-8 3.4C4 15.1 6 17.8 12 21Z" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       );
-    case "linkedin":
+    case "visit":
       return (
-        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="currentColor">
-          <rect x="4" y="9" width="3.5" height="11" rx="0.4" />
-          <circle cx="5.8" cy="5.5" r="2" />
-          <path d="M12 10.2c0-1 .8-1.8 1.8-1.8h.5c2 0 3.7 1.6 3.7 3.6V20H14v-6.8c0-.4-.3-.7-.7-.7-.4 0-.7.3-.7.7V20H12v-9.8Z" />
+        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <path d="M12 21c4.6-4.6 7-8.3 7-11.3A7 7 0 0 0 5 9.7C5 12.7 7.4 16.4 12 21Z" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="12" cy="9.7" r="2.3" />
         </svg>
       );
+    case "donate":
     default:
-      return <span className="font-semibold text-[0.65rem] uppercase">{label.slice(0, 2)}</span>;
+      return (
+        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <path d="M4 9h16v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9Z" />
+          <path d="M9 9V7a3 3 0 0 1 6 0v2" />
+        </svg>
+      );
   }
 }
 
@@ -1346,11 +1611,13 @@ function ExitIntentModal({
   open,
   onClose,
   donateHref,
+  adoptionHref,
   prefersReducedMotion,
 }: {
   open: boolean;
   onClose: () => void;
   donateHref: string;
+  adoptionHref: string;
   prefersReducedMotion: boolean;
 }) {
   return (
@@ -1381,20 +1648,30 @@ function ExitIntentModal({
               ×
             </button>
             <span className="text-xs font-semibold uppercase tracking-[0.32em] text-white/60">Wait—one last wag</span>
-            <h3 className="heading-md mt-4 text-white">Before you go, £1 today fills a bowl tonight.</h3>
+            <h3 className="heading-md mt-4 text-white">Before you go, meet the dogs waiting on transport.</h3>
             <p className="mt-3 text-sm text-white/70">
-              We’re only a few meals away from hitting this week’s target. One more tap keeps the rescue crews rolling.
+              Two minutes to browse the adoption pack—or tap sponsor and keep meals coming while they wait.
             </p>
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <MagneticButton
-                href={donateHref}
-                onHover={() => trackEvent("cta_click_primary", { surface: "exit-intent" })}
+                href={adoptionHref}
+                onHover={() => trackEvent("cta_click_primary", { surface: "exit-intent-adopt" })}
               >
-                £1 Feeds a Dog Today
+                Meet the Adoption Pack
               </MagneticButton>
               <button
                 type="button"
                 className="cta-muted text-xs uppercase tracking-[0.3em] text-white/70"
+                onClick={() => {
+                  trackEvent("cta_click_primary", { surface: "exit-intent-sponsor" });
+                  window.open(donateHref, "_blank");
+                }}
+              >
+                Sponsor Meals
+              </button>
+              <button
+                type="button"
+                className="cta-muted text-xs uppercase tracking-[0.3em] text-white/50"
                 onClick={onClose}
               >
                 Maybe later
@@ -1412,6 +1689,8 @@ export function Landing({ content }: { content: LandingContent }) {
   const [navSolid, setNavSolid] = useState(false);
   const [exitIntentVisible, setExitIntentVisible] = useState(false);
   const [exitIntentDismissed, setExitIntentDismissed] = useState(false);
+
+  const sponsorLabel = content.hero.quickActions.find((action) => action.icon === "sponsor")?.label ?? "Sponsor tonight's meals";
 
   usePointerShift(prefersReducedMotion);
   useSmoothScroll(prefersReducedMotion);
@@ -1448,16 +1727,18 @@ export function Landing({ content }: { content: LandingContent }) {
       <USPStrip items={content.usp} />
       <HowItWorks content={content} prefersReducedMotion={prefersReducedMotion} />
       <Stories content={content} prefersReducedMotion={prefersReducedMotion} />
+      <AdoptionShowcase content={content.adoption} prefersReducedMotion={prefersReducedMotion} />
       <Bento content={content} />
       <TrustSection content={content.trust} prefersReducedMotion={prefersReducedMotion} />
       <FAQSection content={content} />
       <FinalCTA content={content} />
       <FooterBar content={content.footer} />
-      <StickyDonateDock label="£1 Feeds a Dog Today" href={content.hero.donateHref} />
+      <StickyDonateDock label={sponsorLabel} href={content.hero.donateHref} />
       <ExitIntentModal
         open={exitIntentVisible}
         onClose={closeExitModal}
         donateHref={content.hero.donateHref}
+        adoptionHref={content.hero.ctaHref}
         prefersReducedMotion={prefersReducedMotion}
       />
     </main>
@@ -1466,59 +1747,78 @@ export function Landing({ content }: { content: LandingContent }) {
 
 const EN_CONTENT: LandingContent = {
   hero: {
-    eyebrow: "Angels Haven • UK ↔ TR",
-    headline: "£1 = One Meal. Change a Life Today.",
-    subheadline: "Micro-donations move food, emergency care, and flights for rescues between Turkey and the UK.",
-    summary: "Transparent monthly impact • 1-click secure checkout",
-    ctaLabel: "£1 Feeds a Dog Today",
+    eyebrow: "Angels Haven • Adopt ↔ Sponsor",
+    headline: "Adopt. Sponsor. Keep rescue dogs safe tonight.",
+    subheadline: "Choose a companion ready to fly from Turkey or keep our rescue corridor funded with a micro-sponsor.",
+    summary: "Transparent timelines • DEFRA travel compliant • Weekly impact livestreams",
+    ctaLabel: "Meet the adoption pack",
+    ctaHref: "#adopt",
     donateHref: CTA_PRIMARY,
-    donateAmounts: [8, 1, 25, 100],
-    defaultSelectionLabel: "Most people choose £8",
+    donateAmounts: [1, 8, 25, 100],
+    defaultSelectionLabel: "Quick sponsor picks",
     stats: {
-      label: "Meals this month",
-      value: 4186,
+      label: "Homes matched this month",
+      value: 18,
       suffix: "",
     },
-    social: [
-      { label: "Instagram", href: "https://instagram.com/angelshavenpaws" },
-      { label: "YouTube", href: "https://youtube.com/@angelshaven" },
-      { label: "LinkedIn", href: "https://linkedin.com/company/angelshaven" },
+    quickActions: [
+      {
+        id: "adopt-pack",
+        label: "Adopt from the pack",
+        caption: "Browse dogs cleared for travel",
+        href: "#adopt",
+        icon: "adopt",
+      },
+      {
+        id: "sponsor-meal",
+        label: "Sponsor tonight's meals",
+        caption: "£8 covers food & meds",
+        href: CTA_PRIMARY,
+        icon: "sponsor",
+      },
+      {
+        id: "plan-visit",
+        label: "Plan a sanctuary visit",
+        caption: "Meet the team or escort a flight",
+        href: "mailto:hello@angelshaven.org?subject=Sanctuary%20visit",
+        icon: "visit",
+      },
     ],
     media: {
       poster: "/images/hero-poster.avif",
-      video: "/videos/hero-ambient.mp4",
-      alt: "Overhead shot of rescue dogs circling a volunteer",
+      video: "/videos/hero-pack.mp4",
+      alt: "Group of rescue dogs looking down toward the camera",
     },
     liveCounter: {
-      label: "Live donors this week",
-      initial: 1286,
-      minIncrement: 3,
-      maxIncrement: 8,
-      intervalMs: 6500,
-      suffix: "people",
+      label: "Families applying this week",
+      initial: 64,
+      minIncrement: 1,
+      maxIncrement: 3,
+      intervalMs: 7200,
+      suffix: "families",
     },
     socialProof: [
       {
-        id: "today",
-        metric: "🔥 127 donated today",
-        caption: "See who you’re joining",
+        id: "homecomings",
+        metric: "🏡 6 homecomings",
+        caption: "in the last 48 hours",
         media: {
-          poster: "/images/hero-poster.avif",
+          poster: "/images/story-mila.avif",
           video: "/videos/community-loop.mp4",
-          alt: "Supporters forming a circle with rescued dogs",
+          alt: "Families greeting new rescue dogs",
         },
       },
-      { id: "members", metric: "💙 2,847 monthly", caption: "Supporters on autopilot" },
+      { id: "members", metric: "💙 2,847 monthly", caption: "Sponsors on autopilot" },
       { id: "rating", metric: "⭐ 4.9/5", caption: "Transparency rating" },
     ],
     urgency: {
-      remainingLabel: "Dogs still needing meals",
-      remainingValue: "47",
-      goalLabel: "Monthly goal 73% complete",
+      remainingLabel: "Dogs cleared to fly",
+      remainingValue: "7",
+      goalLabel: "Flight fund 73% complete",
       goalPercent: 73,
-      footer: "Help us close the gap before Sunday night.",
+      footer: "Sponsor final vet checks before Sunday night.",
     },
-    recurringHint: "Make it monthly to keep meals arriving automatically.",
+    recurringHint: "Set a monthly sponsor share so transport never pauses.",
     ticker: {
       headline: "Recent supporters",
       entries: [
@@ -1532,10 +1832,10 @@ const EN_CONTENT: LandingContent = {
     },
   },
   usp: [
-    "£1 = One Meal",
-    "Monthly Transparency",
-    "1-Click Secure Checkout",
-    "UK ↔ TR Operations",
+    "Adopt • Don’t Shop",
+    "Ready-to-fly pack",
+    "Monthly transparency",
+    "1-click sponsor checkout",
   ],
   steps: [
     {
@@ -1600,6 +1900,79 @@ const EN_CONTENT: LandingContent = {
       ctaHref: CTA_PRIMARY,
     },
   ],
+  adoption: {
+    eyebrow: "Adopt • Don’t shop",
+    headline: "Ready-to-travel dogs waiting for a sofa.",
+    intro: "Our field team preps every rescue with behaviour notes, medical clearance, and DEFRA paperwork. Claim your match or keep their care funded until they fly home.",
+    cta: {
+      adopt: { label: "View adoption dossiers", href: "#adopt" },
+      sponsor: { label: "Sponsor the flight fund", href: CTA_PRIMARY },
+    },
+    pets: [
+      {
+        id: "nova",
+        name: "Nova",
+        age: "2 yrs",
+        breed: "Anatolian mix",
+        temperament: "Gentle",
+        story: "Rescued from a beach café in Fethiye. Loves children, walks calmly on lead, and already crate trained.",
+        image: "/images/story-mila.avif",
+        badge: "Ready to fly • 4 Oct",
+        medicalNotes: "Heartworm negative",
+        adoptHref: "mailto:adoptions@angelshaven.org?subject=Adopt%20Nova",
+        sponsorHref: CTA_PRIMARY,
+      },
+      {
+        id: "argo",
+        name: "Argo",
+        age: "18 mo",
+        breed: "Border collie mix",
+        temperament: "Playful",
+        story: "Pulled from an industrial estate in Izmir. Thrives with active families and adores agility-style games.",
+        image: "/images/story-duman.avif",
+        badge: "Escort needed • 12 Oct",
+        medicalNotes: "On joint supplements",
+        adoptHref: "mailto:adoptions@angelshaven.org?subject=Adopt%20Argo",
+        sponsorHref: CTA_PRIMARY,
+      },
+      {
+        id: "lale",
+        name: "Lale",
+        age: "3 yrs",
+        breed: "Golden retriever mix",
+        temperament: "Companion",
+        story: "Left behind after a market relocation. Velcro personality, already house-trained, perfect for first-time adopters.",
+        image: "/images/story-after.png",
+        badge: "Foster-to-adopt • London",
+        medicalNotes: "Sensitive stomach",
+        adoptHref: "mailto:adoptions@angelshaven.org?subject=Adopt%20Lale",
+        sponsorHref: CTA_PRIMARY,
+      },
+    ],
+    steps: [
+      {
+        id: "01",
+        title: "Share your home checklist",
+        description: "Tell us about your family, other pets, and travel flexibility so we can recommend the right match.",
+      },
+      {
+        id: "02",
+        title: "Meet your dog virtually",
+        description: "We schedule a video briefing from the sanctuary with behaviour notes, vet reports, and travel timeline.",
+      },
+      {
+        id: "03",
+        title: "Flight + aftercare handled",
+        description: "We book DEFRA-compliant transport, escort the flight, and support integration for the first 30 days.",
+      },
+    ],
+    fallback: {
+      headline: "Not ready to adopt yet?",
+      copy: "Sponsor weekly food, medical top-ups, and travel crates so the pack stays safe until their family arrives.",
+      donateLabel: "Sponsor meals",
+      donateHref: CTA_PRIMARY,
+    },
+  },
   bento: [
     {
       id: "meals",
