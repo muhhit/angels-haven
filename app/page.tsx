@@ -92,14 +92,22 @@ type DonationOption = {
   impact: string;
 };
 
+type ImpactMicrocopy = {
+  id: string;
+  label: string;
+};
+
 type DonationFlowContent = {
   eyebrow: string;
   title: string;
   copy: string;
+  highlight: string;
   options: DonationOption[];
+  microcopy: ImpactMicrocopy[];
   feesLabel: string;
   payments: string[];
   secureBadges: string[];
+  media: MediaAsset;
 };
 
 type StoryItem = {
@@ -134,6 +142,7 @@ type CommunityContent = {
   eyebrow: string;
   title: string;
   copy: string;
+  media: MediaAsset;
   posts: CommunityPost[];
   partners: PartnerLogo[];
   transparency: { id: string; label: string; value: string }[];
@@ -408,7 +417,7 @@ function LottieBadge({ path, loop = true, className }: { path: string; loop?: bo
   return <div ref={containerRef} className={className} aria-hidden="true" />;
 }
 
-function SmartVideo({ media, prefersReducedMotion }: { media: MediaAsset; prefersReducedMotion: boolean }) {
+function SmartVideo({ media, prefersReducedMotion, className, overlay = true }: { media: MediaAsset; prefersReducedMotion: boolean; className?: string; overlay?: boolean }) {
   const [shouldPlay, setShouldPlay] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -447,8 +456,12 @@ function SmartVideo({ media, prefersReducedMotion }: { media: MediaAsset; prefer
     }
   }, [shouldPlay, prefersReducedMotion, media.video]);
 
+  const containerClass = className
+    ? `${className} relative overflow-hidden`
+    : "relative overflow-hidden rounded-[1.8rem] border border-[rgba(208,178,148,0.35)] bg-white/85";
+
   return (
-    <div ref={containerRef} className="relative overflow-hidden rounded-[1.8rem] border border-[rgba(208,178,148,0.35)] bg-white/85">
+    <div ref={containerRef} className={containerClass}>
       <Image src={media.poster} alt={media.alt} width={960} height={540} className={`h-full w-full object-cover transition-opacity duration-500 ${shouldPlay && !prefersReducedMotion && media.video ? 'opacity-0' : 'opacity-100'}`} />
       {!prefersReducedMotion && media.video && (
         <video
@@ -462,21 +475,27 @@ function SmartVideo({ media, prefersReducedMotion }: { media: MediaAsset; prefer
           <source src={media.video} type="video/mp4" />
         </video>
       )}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#ffe7d0]/75 via-transparent to-transparent" />
+      {overlay && <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#ffe7d0]/75 via-transparent to-transparent" />}
     </div>
   );
 }
 
-function EndowedProgress() {
+function EndowedProgress({ variant = "warm" }: { variant?: "warm" | "glow" }) {
+  const isGlow = variant === "glow";
+  const containerClass = isGlow
+    ? "relative inline-flex items-center gap-3 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.32em] text-[#fdeede] shadow-[0_18px_60px_rgba(0,0,0,0.25)] backdrop-blur-md"
+    : "relative inline-flex items-center gap-3 rounded-full border border-[rgba(208,178,148,0.5)] bg-[rgba(255,244,231,0.9)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-[#7d5a42]";
+
+  const animationClass = isGlow ? "h-8 w-8 drop-shadow-[0_0_18px_rgba(255,153,71,0.55)]" : "h-8 w-8";
   return (
-    <div className="relative inline-flex items-center gap-3 rounded-full border border-[rgba(208,178,148,0.5)] bg-[rgba(255,244,231,0.9)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-[#7d5a42]">
-      <LottieBadge path="/lottie/heart-pulse.json" className="h-8 w-8" />
+    <div className={containerClass}>
+      <LottieBadge path="/lottie/heart-pulse.json" className={animationClass} />
       Bahşedilmiş ilerleme aktif
     </div>
   );
 }
 
-function LiveDonationTicker({ ticker, prefersReducedMotion }: { ticker: HeroContent["ticker"]; prefersReducedMotion: boolean }) {
+function LiveDonationTicker({ ticker, prefersReducedMotion, tone = "warm" }: { ticker: HeroContent["ticker"]; prefersReducedMotion: boolean; tone?: "warm" | "glow" }) {
   const [entries, setEntries] = useState(() => ticker.entries.slice(0, 6));
 
   useEffect(() => {
@@ -496,25 +515,39 @@ function LiveDonationTicker({ ticker, prefersReducedMotion }: { ticker: HeroCont
     return () => window.clearInterval(id);
   }, [prefersReducedMotion, entries.length]);
 
+  const isGlow = tone === "glow";
+  const containerClass = isGlow
+    ? "flex flex-col gap-3 rounded-[2rem] border border-white/18 bg-white/12 px-5 py-4 text-[#fdf3e5] shadow-[0_28px_68px_rgba(0,0,0,0.32)] backdrop-blur-lg"
+    : "glass-card flex flex-col gap-3 rounded-[2rem] border border-[rgba(208,178,148,0.4)] bg-white/85 px-5 py-4 text-[#2f2118]";
+
+  const chipClass = isGlow
+    ? "flex items-center justify-between gap-3 rounded-2xl bg-white/10 px-3 py-2 text-[#fef3e4]"
+    : "flex items-center justify-between gap-3 rounded-2xl bg-[rgba(255,250,245,0.82)] px-3 py-2";
+
+  const subTextClass = isGlow ? "text-xs uppercase tracking-[0.24em] text-[#fde0c2]" : "text-xs uppercase tracking-[0.24em] text-[#7d5a42]";
+  const amountTextClass = isGlow ? "text-base font-semibold text-white" : "text-base font-semibold text-[#2f2118]";
+  const timeTextClass = isGlow ? "text-xs text-[#fde0c2]" : "text-xs text-[#7d5a42]";
+  const headlineTextClass = isGlow ? "text-xs uppercase tracking-[0.28em] text-[#fde0c2]/90" : "text-xs uppercase tracking-[0.28em] text-[#7d5a42]";
+
   return (
-    <div className="glass-card flex flex-col gap-3 rounded-[2rem] border border-[rgba(208,178,148,0.4)] bg-white/85 px-5 py-4 text-[#2f2118]" aria-live="polite">
-      <div className="flex items-center justify-between text-xs uppercase tracking-[0.28em] text-[#7d5a42]">
+    <div className={containerClass} aria-live="polite">
+      <div className={`flex items-center justify-between ${headlineTextClass}`}>
         <span>{ticker.headline}</span>
-        <span className="inline-flex items-center gap-1 text-[0.65rem]">
-          <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-[#ff7a00]" aria-hidden="true" />
+        <span className="inline-flex items-center gap-1 text-[0.65rem] text-inherit">
+          <span className={`inline-flex h-2 w-2 animate-pulse rounded-full ${isGlow ? 'bg-[#ffb15d]' : 'bg-[#ff7a00]'}`} aria-hidden="true" />
           Live
         </span>
       </div>
-      <ul className="flex flex-col gap-3 text-sm text-[#4a372a]">
+      <ul className={`flex flex-col gap-3 text-sm ${isGlow ? 'text-[#fbe5cd]' : 'text-[#4a372a]'}`}>
         {entries.slice(0, 4).map((entry) => (
-          <li key={entry.id} className="flex items-center justify-between gap-3 rounded-2xl bg-[rgba(255,250,245,0.82)] px-3 py-2">
+          <li key={entry.id} className={chipClass}>
             <div className="flex flex-col leading-tight">
-              <span className="font-semibold text-[#2f2118]">{entry.donor}</span>
-              <span className="text-xs uppercase tracking-[0.24em] text-[#7d5a42]">{entry.city} • {entry.method}</span>
+              <span className={`font-semibold ${isGlow ? 'text-white' : 'text-[#2f2118]'}`}>{entry.donor}</span>
+              <span className={subTextClass}>{entry.city} • {entry.method}</span>
             </div>
             <div className="flex flex-col items-end leading-tight">
-              <span className="text-base font-semibold text-[#2f2118]">€{entry.amount}</span>
-              <span className="text-xs text-[#7d5a42]">{entry.minutesAgo} dk önce</span>
+              <span className={amountTextClass}>€{entry.amount}</span>
+              <span className={timeTextClass}>{entry.minutesAgo} dk önce</span>
             </div>
           </li>
         ))}
@@ -524,74 +557,182 @@ function LiveDonationTicker({ ticker, prefersReducedMotion }: { ticker: HeroCont
 }
 
 function Hero({ content, prefersReducedMotion }: { content: LandingContent["hero"]; prefersReducedMotion: boolean }) {
+  const heroRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    const ctx = gsap.context(() => {
+      const timeline = gsap.timeline({ defaults: { ease: "power3.out" } });
+      timeline
+        .fromTo(
+          "#hero-eyebrow",
+          { y: 28, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.8 }
+        )
+        .fromTo(
+          "#hero-headline",
+          { y: 46, opacity: 0 },
+          { y: 0, opacity: 1, duration: 1.1 },
+          "<0.1"
+        )
+        .fromTo(
+          "#hero-subheadline",
+          { y: 32, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.8 },
+          "<0.1"
+        )
+        .fromTo(
+          "#hero-description",
+          { y: 24, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.8 },
+          "<0.05"
+        )
+        .fromTo(
+          ".hero-cta",
+          { y: 22, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.7, stagger: 0.1 },
+          "<0.05"
+        )
+        .fromTo(
+          ".hero-stat",
+          { y: 28, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.9, stagger: 0.12 },
+          "<0.1"
+        );
+    }, heroRef);
+    return () => ctx.revert();
+  }, [prefersReducedMotion]);
+
   return (
-    <section id="hero" className="relative flex min-h-[100dvh] flex-col justify-end">
-      <div className="absolute inset-0 overflow-hidden">
-        <SmartVideo media={content.media} prefersReducedMotion={prefersReducedMotion} />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(255,214,182,0.55),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,250,245,0.88)_0%,rgba(255,241,229,0.68)_52%,rgba(252,232,210,0.82)_84%,rgba(249,224,197,0.92)_100%)]" />
+    <section
+      id="hero"
+      ref={heroRef}
+      className="relative min-h-[100dvh] snap-start overflow-hidden text-white"
+    >
+      <div className="absolute inset-0">
+        {!prefersReducedMotion && content.media.video ? (
+          <video
+            key={content.media.video}
+            className="absolute inset-0 h-full w-full object-cover brightness-[0.92]"
+            autoPlay
+            muted
+            loop
+            playsInline
+            poster={content.media.poster}
+          >
+            <source src={content.media.video} type="video/mp4" />
+          </video>
+        ) : (
+          <Image
+            src={content.media.poster}
+            alt={content.media.alt}
+            width={1920}
+            height={1080}
+            className="absolute inset-0 h-full w-full object-cover"
+            priority
+          />
+        )}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_12%,rgba(255,196,151,0.68),transparent_58%)]" aria-hidden />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(16,10,6,0.72)_0%,rgba(22,12,8,0.66)_42%,rgba(29,18,12,0.74)_100%)]" aria-hidden />
       </div>
-      <div className="section-shell relative z-10 flex flex-col gap-10 pb-28 pt-32 text-[#2f2118]">
-        <div className="max-w-4xl space-y-5">
-          <EndowedProgress />
-          <span className="inline-flex rounded-full border border-[rgba(208,178,148,0.4)] bg-white/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-[#7d5a42]">
-            {content.eyebrow}
-          </span>
-          <h1 className="display-hero text-[#2f2118] drop-shadow-[0_14px_32px_rgba(255,190,140,0.35)]">{content.headline}</h1>
-          <p className="text-base text-[#4d3628]">{content.subheadline}</p>
-          <p className="max-w-2xl text-sm text-[#6b4e3c]">{content.description}</p>
-          <div className="flex flex-wrap gap-3 pt-3">
+
+      <div className="relative z-10 flex h-full flex-col justify-between">
+        <header className="section-shell flex flex-col gap-10 pt-24 md:pt-28">
+          <div id="hero-eyebrow" className="flex flex-wrap items-center gap-4 text-[0.68rem] uppercase tracking-[0.32em] text-[#fdeede]/90">
+            <EndowedProgress variant="glow" />
+            <span className="hidden h-[1px] w-12 bg-[#fdeede]/40 sm:inline-flex" aria-hidden />
+            <span>{content.eyebrow}</span>
+          </div>
+
+          <div className="max-w-[620px] space-y-5">
+            <h1
+              id="hero-headline"
+              className="display-hero drop-shadow-[0_42px_110px_rgba(0,0,0,0.45)]"
+            >
+              {content.headline}
+            </h1>
+            <p id="hero-subheadline" className="text-lg font-medium text-[#fceedd]">
+              {content.subheadline}
+            </p>
+            <p id="hero-description" className="max-w-[520px] text-sm text-[#f8dbc0]">
+              {content.description}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
             <MagneticButton
               href={content.primaryCta.href}
+              className="hero-cta"
               onHover={() => trackEvent("cta_click_primary", { surface: "hero-primary" })}
             >
               {content.primaryCta.label}
             </MagneticButton>
             <a
               href={content.secondaryCta.href}
-              className="cta-muted inline-flex items-center gap-2 rounded-full border border-[rgba(208,178,148,0.45)] bg-white/70 px-6 py-3 text-xs uppercase tracking-[0.32em] text-[#5d4030] transition hover:border-[#ff7a00] hover:text-[#2f2118]"
+              className="hero-cta inline-flex items-center gap-2 rounded-full border border-white/28 bg-white/10 px-6 py-3 text-xs uppercase tracking-[0.32em] text-[#fdeede] shadow-[0_22px_60px_rgba(0,0,0,0.32)] backdrop-blur-lg transition hover:border-white/45 hover:bg-white/16"
               onClick={() => trackEvent("cta_click_secondary", { surface: "hero-secondary" })}
             >
               {content.secondaryCta.label}
             </a>
           </div>
-        </div>
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-          <div className="glass-card flex flex-col gap-4 rounded-[2.4rem] border border-[rgba(208,178,148,0.4)] bg-white/85 p-6 text-[#2f2118]">
-            <div>
-              <span className="text-xs uppercase tracking-[0.32em] text-[#7d5a42]">{content.stat.label}</span>
-              <p className="mt-2 text-4xl font-semibold text-[#2f2118]">
-                <AnimatedCounter value={content.stat.value} suffix={content.stat.suffix} />
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {content.donationOptions.map((option) => (
-                <button
-                  key={option.amount}
-                  type="button"
-                  className="inline-flex min-w-[88px] items-center justify-center rounded-full border border-[rgba(208,178,148,0.45)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#5a3f2d] transition hover:border-[#ff7a00] hover:text-[#2f2118]"
-                  onClick={() => {
-                    trackEvent("donation_amount_select", { amount: option.amount, currency: "EUR" });
-                    window.open(content.primaryCta.href, "_blank");
-                  }}
-                >
-                  €{option.amount}
-                </button>
-              ))}
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-[#7d5a42]">
-                <span>{content.progress.label}</span>
-                <span>{content.progress.percent}%</span>
+        </header>
+
+        <div className="section-shell flex flex-col gap-6 pb-16 sm:pb-20 md:flex-row md:items-end md:justify-between">
+          <div className="hero-stat max-w-xl rounded-[2.6rem] border border-white/20 bg-white/12 p-6 shadow-[0_32px_120px_rgba(0,0,0,0.4)] backdrop-blur-lg">
+            <div className="space-y-4">
+              <div>
+                <span className="text-xs uppercase tracking-[0.32em] text-[#fdeede]/80">
+                  {content.stat.label}
+                </span>
+                <p className="mt-2 text-4xl font-semibold text-white">
+                  <AnimatedCounter value={content.stat.value} suffix={content.stat.suffix} />
+                </p>
               </div>
-              <div className="h-2 w-full rounded-full bg-[rgba(255,170,110,0.25)]">
-                <div className="h-full rounded-full bg-[#ff7a00]" style={{ width: `${Math.min(100, content.progress.percent)}%` }} />
+              <div className="flex flex-wrap gap-2">
+                {content.donationOptions.map((option) => (
+                  <button
+                    key={option.amount}
+                    type="button"
+                    className="rounded-full border border-white/25 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#fdeede] transition hover:border-white/45 hover:bg-white/12"
+                    onClick={() => {
+                      trackEvent("donation_amount_select", { amount: option.amount, currency: "EUR" });
+                      window.open(content.primaryCta.href, "_blank");
+                    }}
+                  >
+                    €{option.amount}
+                  </button>
+                ))}
               </div>
-              <p className="text-xs text-[#7d5a42]">{content.progress.caption}</p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-[#fdeede]/75">
+                  <span>{content.progress.label}</span>
+                  <span>{content.progress.percent}%</span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-white/15">
+                  <div
+                    className="h-full rounded-full bg-[#ff9b38]"
+                    style={{ width: `${Math.min(100, content.progress.percent)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-[#fde7d5]">{content.progress.caption}</p>
+              </div>
             </div>
           </div>
-          <LiveDonationTicker ticker={content.ticker} prefersReducedMotion={prefersReducedMotion} />
+
+          <div className="hero-stat max-w-sm">
+            <LiveDonationTicker
+              ticker={content.ticker}
+              prefersReducedMotion={prefersReducedMotion}
+              tone="glow"
+            />
+          </div>
         </div>
+      </div>
+
+      <div className="pointer-events-none absolute right-8 top-1/2 hidden -translate-y-1/2 flex-col items-center gap-3 text-xs uppercase tracking-[0.32em] text-[#fdeede]/75 lg:flex">
+        <span>Kaydır</span>
+        <span className="h-20 w-[1px] bg-[linear-gradient(180deg,rgba(253,238,222,0)_0%,rgba(253,238,222,0.7)_45%,rgba(253,238,222,0)_100%)]" aria-hidden />
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/30">↓</span>
       </div>
     </section>
   );
@@ -603,46 +744,119 @@ function RescueJourney({ content, prefersReducedMotion }: { content: LandingCont
   useEffect(() => {
     if (prefersReducedMotion) return;
     const ctx = gsap.context(() => {
-      ScrollTrigger.create({
-        trigger: containerRef.current,
-        start: "top center",
-        end: "bottom+=40% center",
-        pin: true,
-        pinSpacing: true,
-        scrub: 0.4,
+      const scenes = gsap.utils.toArray<HTMLElement>(".journey-scene");
+      scenes.forEach((scene, index) => {
+        const media = scene.querySelector<HTMLElement>(".journey-media");
+        const halo = scene.querySelector<HTMLElement>(".journey-halo");
+
+        gsap.fromTo(
+          scene,
+          { opacity: 0.35, y: index === 0 ? 0 : 90 },
+          {
+            opacity: 1,
+            y: 0,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: scene,
+              start: "top 75%",
+              end: "bottom 45%",
+              scrub: true,
+            },
+          }
+        );
+
+        if (media) {
+          gsap.fromTo(
+            media,
+            { scale: 1.08, filter: "brightness(0.82) saturate(0.82)" },
+            {
+              scale: 1,
+              filter: "brightness(1) saturate(1)",
+              ease: "power2.out",
+              scrollTrigger: {
+                trigger: scene,
+                start: "top 80%",
+                end: "center 55%",
+                scrub: true,
+              },
+            }
+          );
+        }
+
+        if (halo) {
+          gsap.fromTo(
+            halo,
+            { opacity: 0, scale: 0.6 },
+            {
+              opacity: 0.8,
+              scale: 1,
+              ease: "power2.out",
+              scrollTrigger: {
+                trigger: scene,
+                start: "top 85%",
+                end: "center 45%",
+                scrub: true,
+              },
+            }
+          );
+        }
       });
     }, containerRef);
     return () => ctx.revert();
   }, [prefersReducedMotion]);
 
   return (
-    <section id="journey" className="snap-start bg-[linear-gradient(180deg,#fff6ed_0%,#f7ede3_52%,#f2e4d7_100%)]">
-      <div className="section-shell grid gap-12 py-28 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
-        <div className="sticky top-24 space-y-5 text-[#2f2118]">
-          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-[#7d5a42]">{content.intro.eyebrow}</span>
+    <section
+      id="journey"
+      className="snap-start relative overflow-hidden bg-[linear-gradient(180deg,#fef0df_0%,#f7e4d4_52%,#f0d7c4_100%)]"
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(255,196,151,0.35),transparent_62%)]" aria-hidden />
+      <div className="section-shell relative z-10 grid gap-16 py-32 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
+        <div className="sticky top-28 flex flex-col gap-6 text-[#2f2118]">
+          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-[#7d5a42]">
+            {content.intro.eyebrow}
+          </span>
           <h2 className="heading-xl text-[#2f2118]">{content.intro.title}</h2>
           <p className="text-sm text-[#5a3f2d]">{content.intro.copy}</p>
-        </div>
-        <div ref={containerRef} className="flex flex-col gap-10">
-          {content.scenes.map((scene, index) => (
-            <motion.article
-              key={scene.id}
-              className="glass-card flex flex-col gap-5 rounded-[2.2rem] border border-[rgba(208,178,148,0.4)] bg-white/85 p-6 text-[#2f2118]"
-              initial={{ opacity: 0, y: 36 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.08 }}
-            >
-              <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-[#7d5a42]">
+          <div className="mt-6 flex flex-col gap-3 text-xs uppercase tracking-[0.28em] text-[#b07b56]">
+            {content.scenes.map((scene, index) => (
+              <div key={scene.id} className="flex items-center gap-3">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[rgba(208,178,148,0.4)] bg-white/70 font-semibold text-[#7d5a42]">
+                  {index + 1}
+                </span>
                 <span>{scene.badge}</span>
-                <span>{index + 1}/4</span>
               </div>
-              <SmartVideo media={scene.media} prefersReducedMotion={prefersReducedMotion} />
-              <div className="space-y-3">
-                <h3 className="heading-sm text-[#2f2118]">{scene.title}</h3>
-                <p className="text-sm text-[#5a3f2d]">{scene.copy}</p>
+            ))}
+          </div>
+        </div>
+
+        <div ref={containerRef} className="flex flex-col gap-16">
+          {content.scenes.map((scene, index) => (
+            <article
+              key={scene.id}
+              className="journey-scene relative overflow-hidden rounded-[2.8rem] border border-[rgba(208,178,148,0.35)] bg-[#20140d]/65 text-white shadow-[0_36px_110px_rgba(0,0,0,0.28)] backdrop-blur-xl"
+            >
+              <SmartVideo
+                media={scene.media}
+                prefersReducedMotion={prefersReducedMotion}
+                className="journey-media h-[420px] w-full"
+                overlay={false}
+              />
+              <div className="journey-halo pointer-events-none absolute -inset-10 rounded-[4rem] bg-[radial-gradient(circle_at_center,rgba(255,168,104,0.45),rgba(255,168,104,0))] opacity-0" aria-hidden />
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(21,13,9,0.1)_0%,rgba(21,13,9,0.72)_68%,rgba(21,13,9,0.88)_100%)]" aria-hidden />
+              <div className="relative z-10 flex h-full flex-col justify-between p-8 md:p-10">
+                <div className="flex items-center justify-between text-xs uppercase tracking-[0.32em] text-[#f8dbc0]/85">
+                  <span>{scene.badge}</span>
+                  <span>
+                    {index + 1}/{content.scenes.length}
+                  </span>
+                </div>
+                <div className="max-w-[420px] space-y-3">
+                  <h3 className="heading-md text-white">{scene.title}</h3>
+                  <p className="text-sm text-[#f8dbc0]">{scene.copy}</p>
+                </div>
               </div>
-            </motion.article>
+            </article>
           ))}
         </div>
       </div>
@@ -751,6 +965,45 @@ function SponsorshipModal({ pet, onClose }: { pet: PetCard | null; onClose: () =
   );
 }
 
+function ImpactVisual({ media, microcopy }: { media: MediaAsset; microcopy: ImpactMicrocopy[] }) {
+  const prefersReducedMotion = usePrefersReducedMotion();
+
+  return (
+    <div className="impact-visual relative flex flex-col gap-6 rounded-[2.8rem] border border-white/20 bg-white/12 p-6 text-white shadow-[0_32px_120px_rgba(0,0,0,0.32)] backdrop-blur-xl">
+      <div className="flex items-center justify-between text-xs uppercase tracking-[0.32em] text-[#fdeede]/85">
+        <span>Etki Simülatörü</span>
+        <span className="inline-flex items-center gap-2 text-[0.7rem]">
+          <span className="inline-flex h-2 w-2 animate-ping rounded-full bg-[#ffb15d]" aria-hidden />
+          Canlı
+        </span>
+      </div>
+      <SmartVideo
+        media={media}
+        prefersReducedMotion={prefersReducedMotion}
+        className="relative h-[320px] w-full overflow-hidden rounded-[2.4rem] border border-white/20"
+        overlay={false}
+      />
+      <div className="grid gap-3">
+        {microcopy.map((item) => (
+          <div
+            key={item.id}
+            className="flex items-center gap-3 rounded-2xl border border-white/18 bg-white/12 px-4 py-3 text-sm text-[#fdeede]"
+          >
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-base font-semibold text-white">
+              {item.id}
+            </span>
+            <p className="text-sm text-[#fdeede]">{item.label}</p>
+          </div>
+        ))}
+      </div>
+      <div className="inline-flex items-center gap-3 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[0.7rem] uppercase tracking-[0.32em] text-[#fdeede]">
+        <LottieBadge path="/lottie/heart-pulse.json" className="h-8 w-8 drop-shadow-[0_0_18px_rgba(255,153,71,0.55)]" />
+        Bağışın anında izlenir
+      </div>
+    </div>
+  );
+}
+
 function DonationFlow({ content }: { content: LandingContent["donation"] }) {
   type Step = 1 | 2 | 3 | 4;
   const [step, setStep] = useState<Step>(1);
@@ -761,26 +1014,25 @@ function DonationFlow({ content }: { content: LandingContent["donation"] }) {
   const total = useMemo(() => (coverFee ? Math.round(amount * 1.029 + 0.3) : amount), [amount, coverFee]);
 
   return (
-    <section id="donation" className="snap-start bg-[linear-gradient(180deg,#fff3e6_0%,#faecdf_55%,#f3e2d4_100%)]">
-      <div className="section-shell grid gap-12 py-28 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
-        <div className="space-y-5 text-[#2f2118]">
-          <span className="inline-flex rounded-full border border-[rgba(208,178,148,0.45)] bg-white/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-[#7d5a42]">
+    <section
+      id="donation"
+      className="snap-start relative overflow-hidden bg-[linear-gradient(180deg,#2b1b13_0%,#3c2318_46%,#2a1a12_100%)]"
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(255,170,110,0.28),transparent_62%)]" aria-hidden />
+      <div className="section-shell relative z-10 grid gap-12 py-32 text-white lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+        <div className="space-y-6">
+          <span className="inline-flex items-center gap-3 rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-[#fdeede]">
             {content.eyebrow}
           </span>
-          <h2 className="heading-xl text-[#2f2118]">{content.title}</h2>
-          <p className="text-base text-[#5a3f2d]">{content.copy}</p>
-          <ul className="space-y-2 text-sm text-[#6b4e3c]">
-            {content.options.map((option) => (
-              <li key={option.amount}>✓ {option.label} · {option.impact}</li>
-            ))}
-          </ul>
-          <div className="flex flex-wrap items-center gap-3 pt-4 text-xs uppercase tracking-[0.28em] text-[#7d5a42]">
-            {content.secureBadges.map((badge) => (
-              <span key={badge} className="rounded-full border border-[rgba(208,178,148,0.45)] bg-white/80 px-3 py-1">{badge}</span>
-            ))}
-          </div>
+          <h2 className="heading-xl max-w-md text-white">{content.title}</h2>
+          <p className="max-w-md text-sm text-[#f8dbc0]">{content.copy}</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#ffb15d]">{content.highlight}</p>
+          <ImpactVisual media={content.media} microcopy={content.microcopy} />
         </div>
-        <div className="glass-card flex flex-col gap-5 rounded-[2.6rem] border border-[rgba(208,178,148,0.45)] bg-white/90 p-6 text-[#2f2118]">
+        <div className="glass-card relative flex flex-col gap-5 rounded-[2.6rem] border border-white/18 bg-white/92 p-6 text-[#2f2118] shadow-[0_28px_110px_rgba(0,0,0,0.25)]">
+          <div className="absolute -top-10 right-8 hidden h-20 w-20 items-center justify-center rounded-full border border-white/30 bg-white/90 text-[#ff7a00] shadow-[0_24px_60px_rgba(0,0,0,0.2)] lg:flex">
+            €{amount}
+          </div>
           <div className="relative h-1.5 w-full rounded-full bg-[rgba(255,170,110,0.25)]">
             <div className="h-full rounded-full bg-[#ff7a00]" style={{ width: `${(step / 4) * 100}%` }} />
             <span className="absolute right-0 top-3 text-xs text-[#7d5a42]">Adım {step}/4</span>
@@ -796,11 +1048,11 @@ function DonationFlow({ content }: { content: LandingContent["donation"] }) {
                     <button
                       key={option.amount}
                       type="button"
-                  className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
-                    isActive
-                      ? 'border-[#ff7a00] bg-[#ff7a00]/12 text-[#2f2118]'
-                      : 'border-[rgba(208,178,148,0.45)] bg-white/70 text-[#5a3f2d] hover:border-[#ff7a00] hover:text-[#2f2118]'
-                  }`}
+                      className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                        isActive
+                          ? "border-[#ff7a00] bg-[#ff7a00]/12 text-[#2f2118] shadow-[0_12px_30px_rgba(255,122,0,0.22)]"
+                          : "border-[rgba(208,178,148,0.45)] bg-white/70 text-[#5a3f2d] hover:border-[#ff7a00] hover:text-[#2f2118]"
+                      }`}
                       onClick={() => {
                         setAmount(option.amount);
                         trackEvent("donation_amount_select", { amount: option.amount, surface: "wizard" });
@@ -978,64 +1230,85 @@ function RescueStories({ content, prefersReducedMotion }: { content: LandingCont
 }
 
 function CommunitySpotlight({ content }: { content: LandingContent["community"] }) {
+  const prefersReducedMotion = usePrefersReducedMotion();
+
   return (
-    <section id="community" className="snap-start bg-[linear-gradient(180deg,#fff4e9_0%,#f8ebdf_55%,#f1dece_100%)]">
-      <div className="section-shell flex flex-col gap-12 py-28 text-[#2f2118]">
-        <div className="max-w-3xl space-y-4">
-          <span className="inline-flex rounded-full border border-[rgba(208,178,148,0.45)] bg-white/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-[#7d5a42]">
+    <section
+      id="community"
+      className="snap-start relative overflow-hidden bg-[linear-gradient(180deg,#23140d_0%,#2d1b12_48%,#1c120c_100%)]"
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,180,120,0.28),transparent_62%)]" aria-hidden />
+      <div className="section-shell relative z-10 grid gap-12 py-32 text-white xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+        <div className="flex flex-col gap-6">
+          <span className="inline-flex items-center gap-3 rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-[#fdeede]">
+            <LottieBadge path="/lottie/heart-pulse.json" className="h-8 w-8 drop-shadow-[0_0_18px_rgba(255,153,71,0.55)]" />
             {content.eyebrow}
           </span>
-          <h2 className="heading-xl">{content.title}</h2>
-          <p className="text-base text-[#5a3f2d]">{content.copy}</p>
-        </div>
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)]">
-          <div className="grid gap-4 md:grid-cols-2">
-            {content.posts.map((post) => (
-              <article key={post.id} className="glass-card flex flex-col gap-4 rounded-[2rem] border border-[rgba(208,178,148,0.4)] bg-white/88 p-5">
-                <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-[#7d5a42]">
-                  <span>{post.author}</span>
-                  <span>{post.location}</span>
+          <h2 className="heading-xl max-w-sm text-white">{content.title}</h2>
+          <p className="max-w-sm text-sm text-[#f8dbc0]">{content.copy}</p>
+          <SmartVideo
+            media={content.media}
+            prefersReducedMotion={prefersReducedMotion}
+            className="relative h-[260px] w-full overflow-hidden rounded-[2.4rem] border border-white/18"
+            overlay={false}
+          />
+          <div className="space-y-3">
+            {content.metrics.map((metric) => (
+              <div key={metric.id} className="flex items-center justify-between rounded-2xl border border-white/18 bg-white/12 px-5 py-3 text-sm text-[#fdeede]">
+                <div>
+                  <p className="text-base font-semibold text-white">{metric.value}</p>
+                  <span className="text-xs uppercase tracking-[0.3em] text-[#fdeede]/80">{metric.label}</span>
                 </div>
-                <Image src={post.image} alt={post.author} width={560} height={360} className="h-40 w-full rounded-[1.6rem] object-cover" />
-                <p className="text-sm text-[#5a3f2d]">“{post.quote}”</p>
-              </article>
+                <span className="text-xs text-[#f8dbc0]">{metric.caption}</span>
+              </div>
             ))}
           </div>
-          <div className="flex flex-col gap-6">
-            <div className="glass-card space-y-4 rounded-[2rem] border border-[rgba(208,178,148,0.4)] bg-white/88 p-5">
-              <h3 className="text-lg font-semibold text-[#2f2118]">Anlık Etki Sayaçları</h3>
-              <ul className="space-y-3 text-sm text-[#6b4e3c]">
-                {content.metrics.map((metric) => (
-                  <li key={metric.id}>
-                    <span className="text-base font-semibold text-[#2f2118]">{metric.value}</span>
-                    <span className="block text-xs uppercase tracking-[0.3em] text-[#7d5a42]">{metric.label}</span>
-                    <p className="text-xs text-[#7d5a42]">{metric.caption}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="glass-card space-y-4 rounded-[2rem] border border-[rgba(208,178,148,0.4)] bg-white/88 p-5">
-              <h3 className="text-lg font-semibold text-[#2f2118]">Partner Klinikler & Sponsorlar</h3>
-              <div className="flex flex-wrap gap-3 text-xs uppercase tracking-[0.28em] text-[#7d5a42]">
-                {content.partners.map((partner) => (
-                  <span key={partner.id} className="rounded-full border border-[rgba(208,178,148,0.45)] bg-white/80 px-4 py-2">{partner.label}</span>
-                ))}
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          {content.posts.map((post, index) => (
+            <motion.article
+              key={post.id}
+              className="relative flex flex-col gap-4 rounded-[2rem] border border-white/18 bg-white/10 p-5 text-left text-[#fceedd] shadow-[0_32px_110px_rgba(0,0,0,0.28)] backdrop-blur-xl"
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.08 }}
+              whileHover={prefersReducedMotion ? undefined : { y: -6, scale: 1.01 }}
+            >
+              <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-[#fdeede]/80">
+                <span>{post.author}</span>
+                <span>{post.location}</span>
               </div>
+              <Image src={post.image} alt={post.author} width={560} height={360} className="h-40 w-full rounded-[1.6rem] object-cover" />
+              <p className="text-sm leading-relaxed text-[#f8dbc0]">“{post.quote}”</p>
+            </motion.article>
+          ))}
+
+          <div className="rounded-[2rem] border border-white/18 bg-white/10 p-6 text-[#fdeede] shadow-[0_32px_110px_rgba(0,0,0,0.28)] backdrop-blur-xl lg:col-span-2">
+            <h3 className="text-lg font-semibold text-white">Partner Klinikler & Sponsorlar</h3>
+            <div className="mt-4 flex flex-wrap gap-3 text-xs uppercase tracking-[0.28em] text-[#fdeede]/80">
+              {content.partners.map((partner) => (
+                <span key={partner.id} className="rounded-full border border-white/18 bg-white/10 px-4 py-2">
+                  {partner.label}
+                </span>
+              ))}
             </div>
-            <div className="glass-card space-y-3 rounded-[2rem] border border-[rgba(208,178,148,0.4)] bg-white/88 p-5 text-sm text-[#5a3f2d]">
-              <h3 className="text-lg font-semibold text-[#2f2118]">Şeffaflık Kayıtları</h3>
-              <ul className="space-y-2">
-                {content.transparency.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between">
-                    <span>{item.label}</span>
-                    <span className="text-xs uppercase tracking-[0.3em] text-[#7d5a42]">{item.value}</span>
-                  </li>
-                ))}
-              </ul>
-              <a href="/transparency" className="text-xs uppercase tracking-[0.3em] text-[#ff9b38]" onClick={() => trackEvent("cta_click_secondary", { surface: "transparency" })}>
-                Tüm raporları incele →
-              </a>
+            <div className="mt-6 grid gap-2 text-sm text-[#f8dbc0] md:grid-cols-3">
+              {content.transparency.map((item) => (
+                <div key={item.id} className="flex flex-col gap-1 rounded-2xl border border-white/12 bg-white/8 px-4 py-3">
+                  <span className="text-xs uppercase tracking-[0.28em] text-[#fdeede]/70">{item.label}</span>
+                  <span className="text-base font-semibold text-white">{item.value}</span>
+                </div>
+              ))}
             </div>
+            <a
+              href="/transparency"
+              className="mt-6 inline-flex items-center gap-2 text-xs uppercase tracking-[0.32em] text-[#ffb15d]"
+              onClick={() => trackEvent("cta_click_secondary", { surface: "transparency" })}
+            >
+              Tüm raporları incele →
+            </a>
           </div>
         </div>
       </div>
@@ -1156,13 +1429,13 @@ const landingContent: LandingContent = {
   hero: {
     eyebrow: "Sahne 0 • Empati",
     headline: "Angels Haven Dijital Sığınağı",
-    subheadline: "İlk bakışta merhamet, bir sonraki nefeste umut.",
-    description: "Fethiye'nin tuzlu rüzgârından Londra'nın sıcak salonlarına uzanan yolculukları hissedin. Her kaydırma, her dokunuş, bir canın masalına sıcaklık taşır.",
+    subheadline: "Bir bakışta merhamet, bir sonraki nefeste umut.",
+    description: "Fethiye'nin rüzgârından Avrupa'daki kanepelere uzanan kurtarma yolculuğu parmaklarının ucunda. Her kaydırma yeni bir hikâyeyi hayata döndürür.",
     primaryCta: { label: "Bir Hikayeyi Değiştir", href: CTA_DONATE },
     secondaryCta: { label: "Bir Kase Mama Gönder", href: CTA_DONATE },
     media: {
       poster: "/images/hero-poster.avif",
-      video: "/videos/hero-pack.mp4",
+      video: "/videos/hero-shelter.mp4",
       alt: "Kurtarılmış köpekler koşarken",
     },
     stat: {
@@ -1196,7 +1469,7 @@ const landingContent: LandingContent = {
     intro: {
       eyebrow: "Sahne 1 • Umut",
       title: "Kurtarma döngüsü dört duygusal vuruştan oluşur",
-      copy: "Her sahne; korkudan güvene, soğuktan yumuşacık battaniyelere uzanan kokuları ve sesleri taşıyor. Kaydıkça kalbiniz de ekibe katılıyor.",
+      copy: "Kaydırdıkça ihbar anından sıcak yuvaya uzanan duygusal yay sana rehberlik eder.",
     },
     scenes: [
       {
@@ -1338,16 +1611,27 @@ const landingContent: LandingContent = {
   },
   donation: {
     eyebrow: "Sahne 3 • Güçlenme",
-    title: "Etki simülatörü ile saniyeler içinde bağış",
-    copy: "Seçtiğin rakam anında mama kokusuna, sıcak yatağa ya da uçuş bileti fonuna dönüşüyor. Üç nefeste tamamlanan form, minnettarlığı hemen ulaştırıyor.",
+    title: "Sizin desteğiniz, onların hikayesi",
+    copy: "Apple Pay veya Google Pay ile 30 saniyeden kısa sürede tamamlanan, etkiyi aynı anda gösteren bağış akışı.",
+    highlight: "€29 = bir haftalık mama + sıcak yatak",
     options: [
       { amount: 5, label: "Bir kâse mama", impact: "Bir günlük besleyici öğün" },
       { amount: 29, label: "Bir haftalık bakım", impact: "Mama + vitamin + pansuman" },
       { amount: 45, label: "Uçuş sandığı", impact: "DEFRA onaylı uçuş kasası" },
     ],
+    microcopy: [
+      { id: "01", label: "Apple Pay ile ortalama 12 saniyede tamamlanır." },
+      { id: "02", label: "Stripe Radar + SSL 256-bit ile güvence altındadır." },
+      { id: "03", label: "İşlem ücretini üstlenen bağışçılar geliri %14 artırıyor." },
+    ],
     feesLabel: "İşlem ücretini üstlen (%2.9 + €0.30)",
     payments: ["Apple Pay", "Google Pay", "Stripe Kart", "PayPal", "SEPA / iDEAL"],
     secureBadges: ["SSL 256-bit", "GDPR", "PCI-DSS"],
+    media: {
+      poster: "/images/step-impact.avif",
+      video: "/videos/step-impact.mp4",
+      alt: "Mama kabı bağışla doluyor",
+    },
   },
   stories: {
     eyebrow: "Sahne 4 • Aidiyet",
@@ -1382,6 +1666,11 @@ const landingContent: LandingContent = {
     eyebrow: "Sahne 5 • Topluluk",
     title: "Mutlu Patiler duvarı",
     copy: "Facebook grubumuz ve #AngelsHavenAilesi etiketi; kahve kokulu mutfaklarda çekilen videoları, ilk park koşularını, teşekkür notlarını hayata döküyor.",
+    media: {
+      poster: "/images/story-mila.avif",
+      video: "/videos/community-loop.mp4",
+      alt: "Mutlu Patiler topluluğu",
+    },
     posts: [
       {
         id: "post-1",
