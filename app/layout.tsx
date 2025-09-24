@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Manrope, Playfair_Display } from "next/font/google";
+import { Inter, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import { CookieConsent } from "../components/CookieConsent";
 
@@ -60,15 +60,14 @@ const donationSchema = {
   }
 };
 
-const sans = Manrope({
-  variable: "--font-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
-  weight: ["400", "500", "600", "700"],
 });
 
-const serif = Playfair_Display({
-  variable: "--font-serif",
+const display = Bricolage_Grotesque({
+  variable: "--font-display",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
   display: "swap",
@@ -110,7 +109,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${sans.variable} ${serif.variable} bg-background text-foreground antialiased`}
+        className={`${inter.variable} ${display.variable} bg-background text-foreground antialiased`}
       >
         <Script id="ms-clarity" strategy="afterInteractive">
           {`(function(c,l,a,r,i,t,y){

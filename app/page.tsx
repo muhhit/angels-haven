@@ -3,6 +3,13 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useSpring } from "framer-motion";
+import Lenis from "lenis";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 type MediaAsset = {
   poster: string;
@@ -24,28 +31,17 @@ type HeroQuickAction = {
   icon: "adopt" | "sponsor" | "visit" | "donate" | "community";
 };
 
-type HeroTrustMark = {
-  id: string;
-  label: string;
-  caption: string;
-  href?: string;
-};
-
 type HeroContent = {
   eyebrow: string;
   headline: string;
   subheadline: string;
   summary: string;
-  highlights: string[];
-  facesCaption: string;
   ctaLabel: string;
   ctaHref: string;
   donateHref: string;
   donateAmounts: number[];
-  donationStories: { amount: number; label: string }[];
   stats: StatMetric;
   quickActions: HeroQuickAction[];
-  trustMarks: HeroTrustMark[];
   media: MediaAsset;
   defaultSelectionLabel: string;
   liveCounter: {
@@ -239,7 +235,6 @@ type EmergencyCampaign = {
   currency: string;
   dogsWaiting: number;
   deadline: string;
-  deadlineIso: string;
   ctaLabel: string;
   ctaHref: string;
 };
@@ -493,84 +488,86 @@ function useSmoothScroll(disabled: boolean) {
   useEffect(() => {
     if (typeof window === "undefined" || disabled) return;
 
-    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reducedMotionQuery.matches) return;
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (mediaQuery.matches) return;
 
-    const previous = document.documentElement.style.scrollBehavior;
-    document.documentElement.style.scrollBehavior = "smooth";
+    const desktopQuery = window.matchMedia("(min-width: 1024px)");
+
+    let lenis: Lenis | null = null;
+    let rafId: number | null = null;
+    let resizeAttached = false;
+
+    const handleScrollUpdate = () => ScrollTrigger.update();
+    const handleResize = () => ScrollTrigger.refresh();
+
+    const attachResize = () => {
+      if (!resizeAttached) {
+        window.addEventListener("resize", handleResize, { passive: true });
+        resizeAttached = true;
+      }
+    };
+
+    const detachResize = () => {
+      if (resizeAttached) {
+        window.removeEventListener("resize", handleResize);
+        resizeAttached = false;
+      }
+    };
+
+    const startLenis = () => {
+      if (lenis) return;
+      lenis = new Lenis({
+        duration: 1.05,
+        lerp: 0.08,
+        smoothWheel: true,
+      });
+      const raf = (time: number) => {
+        lenis?.raf(time);
+        rafId = requestAnimationFrame(raf);
+      };
+      rafId = requestAnimationFrame(raf);
+      lenis.on("scroll", handleScrollUpdate);
+      attachResize();
+    };
+
+    const stopLenis = () => {
+      if (!lenis) return;
+      lenis.off("scroll", handleScrollUpdate);
+      lenis.destroy();
+      lenis = null;
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      detachResize();
+    };
+
+    const handleDesktopToggle = (event: MediaQueryListEvent) => {
+      if (event.matches) {
+        startLenis();
+      } else {
+        stopLenis();
+      }
+    };
+
+    if (desktopQuery.matches) {
+      startLenis();
+    }
+    if (typeof desktopQuery.addEventListener === "function") {
+      desktopQuery.addEventListener("change", handleDesktopToggle);
+    } else {
+      desktopQuery.addListener(handleDesktopToggle);
+    }
 
     return () => {
-      document.documentElement.style.scrollBehavior = previous;
+      if (typeof desktopQuery.removeEventListener === "function") {
+        desktopQuery.removeEventListener("change", handleDesktopToggle);
+      } else {
+        desktopQuery.removeListener(handleDesktopToggle);
+      }
+      stopLenis();
     };
   }, [disabled]);
-}
-
-function useRollingCounter(config: HeroContent["liveCounter"], prefersReducedMotion: boolean) {
-  const { initial, intervalMs, minIncrement, maxIncrement } = config;
-  const [value, setValue] = useState(initial);
-
-  useEffect(() => {
-    setValue(initial);
-  }, [initial]);
-
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-    const interval = window.setInterval(() => {
-      setValue((previous) => previous + Math.floor(Math.random() * (maxIncrement - minIncrement + 1)) + minIncrement);
-    }, intervalMs);
-    return () => window.clearInterval(interval);
-  }, [intervalMs, minIncrement, maxIncrement, prefersReducedMotion]);
-
-  return value;
-}
-
-type CountdownState = {
-  expired: boolean;
-  days: string;
-  hours: string;
-  minutes: string;
-  seconds: string;
-};
-
-function computeCountdown(deadlineIso: string): CountdownState {
-  const target = Date.parse(deadlineIso);
-  if (Number.isNaN(target)) {
-    return { expired: false, days: "00", hours: "00", minutes: "00", seconds: "00" };
-  }
-  const diff = target - Date.now();
-  if (diff <= 0) {
-    return { expired: true, days: "00", hours: "00", minutes: "00", seconds: "00" };
-  }
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-  const minutes = Math.floor((diff / (1000 * 60)) % 60);
-  const seconds = Math.floor((diff / 1000) % 60);
-  const format = (value: number) => value.toString().padStart(2, "0");
-  return {
-    expired: false,
-    days: format(days),
-    hours: format(hours),
-    minutes: format(minutes),
-    seconds: format(seconds),
-  };
-}
-
-function useCountdown(deadlineIso: string, prefersReducedMotion: boolean) {
-  const [state, setState] = useState(() => computeCountdown(deadlineIso));
-
-  useEffect(() => {
-    if (!deadlineIso) return;
-    if (prefersReducedMotion) {
-      setState(computeCountdown(deadlineIso));
-      return;
-    }
-    const tick = () => setState(computeCountdown(deadlineIso));
-    tick();
-    const timer = window.setInterval(tick, 1000);
-    return () => window.clearInterval(timer);
-  }, [deadlineIso, prefersReducedMotion]);
-
-  return state;
 }
 
 function AnimatedCounter({ value, suffix }: { value: number; suffix?: string }) {
@@ -632,73 +629,7 @@ function MagneticButton({ href, children, className, onHover }: { href: string; 
   );
 }
 
-function ShareButtons({ message, label = "Share the mission" }: { message: string; label?: string }) {
-  const [copied, setCopied] = useState(false);
-  const shareUrl = typeof window !== "undefined" ? window.location.href : "https://angels-haven.vercel.app";
-  const payload = `${message} ${shareUrl}`.trim();
-
-  const handleNativeShare = async () => {
-    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-      try {
-        await navigator.share({ text: message, url: shareUrl });
-        trackEvent("share_native", {});
-      } catch (error) {
-        console.error("Native share cancelled", error);
-      }
-    } else {
-      handleCopy();
-    }
-  };
-
-  const handleCopy = async () => {
-    if (typeof navigator === "undefined" || !navigator.clipboard) return;
-    try {
-      await navigator.clipboard.writeText(payload);
-      setCopied(true);
-      trackEvent("share_copy", {});
-      window.setTimeout(() => setCopied(false), 2200);
-    } catch (error) {
-      console.error("Copy failed", error);
-    }
-  };
-
-  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(payload)}`;
-
-  return (
-    <div className="flex flex-wrap items-center gap-3 text-xs text-[#6b412a]">
-      <span className="uppercase tracking-[0.28em] text-[#a3653b]">{label}</span>
-      <button
-        type="button"
-        className="rounded-full border border-[#f1d4b8] bg-white/80 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-[#7a4d31] transition hover:border-[#d98a52] hover:bg-white"
-        onClick={handleNativeShare}
-      >
-        Share now
-      </button>
-      <a
-        href={whatsappHref}
-        target="_blank"
-        rel="noreferrer"
-        className="rounded-full border border-[#25d366] bg-[#25d366]/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-[#1c8f4a] transition hover:bg-[#25d366]/25"
-        onClick={() => trackEvent("share_whatsapp", {})}
-      >
-        WhatsApp
-      </a>
-      <button
-        type="button"
-        className="rounded-full border border-[#f1d4b8] bg-white/80 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-[#7a4d31] transition hover:border-[#d98a52] hover:bg-white"
-        onClick={handleCopy}
-      >
-        {copied ? "Copied!" : "Copy for IG"}
-      </button>
-    </div>
-  );
-}
-
 function Navigation({ content, solid }: { content: LandingContent; solid: boolean }) {
-  const remaining = Math.max(content.emergency.goal - content.emergency.raised, 0);
-  const roundedRemaining = Math.ceil(remaining / 5) * 5;
-  const navCtaLabel = remaining > 0 ? `Only £${roundedRemaining.toLocaleString()} to launch` : "Flight funded — keep it open";
-
   return (
     <header
       className={`pointer-events-auto fixed inset-x-0 top-0 z-[90] transition-colors duration-300 ${
@@ -755,7 +686,7 @@ function Navigation({ content, solid }: { content: LandingContent; solid: boolea
           className="hidden md:inline-flex"
           onHover={() => trackEvent("cta_click_primary", { surface: "nav-hover" })}
         >
-          {navCtaLabel}
+          £1 Feeds a Dog Today
         </MagneticButton>
       </div>
     </header>
@@ -879,284 +810,98 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent; pref
   useEffect(() => {
     const container = heroRef.current;
     if (!container) return;
-    const animatedElements = Array.from(container.querySelectorAll("[data-hero-animate]")) as HTMLElement[];
-
-    if (prefersReducedMotion || !window.matchMedia("(min-width: 768px)").matches) {
-      animatedElements.forEach((element) => {
-        element.style.opacity = "1";
-        element.style.transform = "none";
-        element.style.transition = "none";
-      });
-      return () => {
-        animatedElements.forEach((element) => {
-          element.style.removeProperty("opacity");
-          element.style.removeProperty("transform");
-          element.style.removeProperty("transition");
-        });
-      };
+    if (prefersReducedMotion) {
+      gsap.set(container.querySelectorAll("[data-hero-animate]") as NodeListOf<HTMLElement>, { opacity: 1, y: 0 });
+      return;
     }
-
-    animatedElements.forEach((element, index) => {
-      element.style.opacity = "0";
-      element.style.transform = "translateY(40px)";
-      element.style.transition = "opacity 0.7s ease, transform 0.7s ease";
-      element.style.transitionDelay = `${index * 0.1}s`;
-      requestAnimationFrame(() => {
-        element.style.opacity = "1";
-        element.style.transform = "translateY(0)";
+    const screenQuery = window.matchMedia("(min-width: 768px)");
+    if (!screenQuery.matches) {
+      gsap.set(container.querySelectorAll("[data-hero-animate]") as NodeListOf<HTMLElement>, { opacity: 1, y: 0 });
+      return;
+    }
+    const ctx = gsap.context(() => {
+      gsap.from("[data-hero-animate]", {
+        y: 36,
+        opacity: 0,
+        stagger: 0.08,
+        duration: 1.1,
+        ease: "power3.out",
+        delay: 0.2,
       });
-    });
-
-    return () => {
-      animatedElements.forEach((element) => {
-        element.style.removeProperty("opacity");
-        element.style.removeProperty("transform");
-        element.style.removeProperty("transition");
-        element.style.removeProperty("transition-delay");
-      });
-    };
+    }, heroRef);
+    return () => ctx.revert();
   }, [prefersReducedMotion]);
 
   const { hero, securityBadges } = content;
-  const heroPets = content.adoption.pets.slice(0, 4);
-  const missionCampaign = content.emergency;
 
   return (
     <section
       id="hero"
       ref={heroRef}
-      className="hero-surface relative flex min-h-[100dvh] snap-start items-center justify-center overflow-hidden text-[#2b1a12]"
+      className="hero-surface relative flex min-h-[100dvh] snap-start items-center justify-center overflow-hidden"
     >
       <HeroMedia media={hero.media} active={videoActive} prefersReducedMotion={prefersReducedMotion} />
-      <div className="section-shell relative z-10 grid gap-12 py-28 text-[#2b1a12] lg:grid-cols-[minmax(0,1.1fr)_minmax(0,420px)]">
+      <div className="section-shell relative z-10 grid gap-12 py-32 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex flex-col gap-8">
-          <HeroTrustMarks marks={hero.trustMarks} />
-          <div data-hero-animate>
-            <span className="inline-flex w-fit items-center rounded-full border border-[#f1cfae] bg-white/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-[#9a5b35] shadow-[0_12px_30px_rgba(179,111,68,0.18)]">
-              {hero.eyebrow}
-            </span>
+          <span data-hero-animate className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+            {hero.eyebrow}
+          </span>
+          <div className="space-y-6 text-white">
+            <h1 data-hero-animate className="display-hero max-w-3xl">
+              {hero.headline}
+            </h1>
+            <p data-hero-animate className="max-w-xl text-base text-white/75">
+              {hero.subheadline}
+            </p>
+            <p data-hero-animate className="text-sm uppercase tracking-[0.35em] text-white/45">
+              {hero.summary}
+            </p>
           </div>
-          <div className="space-y-5" data-hero-animate>
-            <h1 className="display-hero max-w-3xl text-[#2b1a12]">{hero.headline}</h1>
-            <p className="max-w-xl text-lg text-[#523322]">{hero.subheadline}</p>
-            <p className="text-xs uppercase tracking-[0.32em] text-[#b97c4d]">{hero.summary}</p>
-          </div>
-          <HeroHighlights items={hero.highlights} />
-          <div className="flex flex-wrap items-center gap-4" data-hero-animate>
-            <MagneticButton href={hero.donateHref} onHover={() => trackEvent("cta_click_primary", { surface: "hero-primary" })}>
-              {hero.ctaLabel}
-            </MagneticButton>
-            <a
-              href={CTA_REPORT}
-              className="cta-muted inline-flex items-center justify-center text-xs uppercase tracking-[0.3em] text-[#744731]"
-              onClick={() => trackEvent("cta_click_secondary", { surface: "hero-report" })}
-            >
-              View transparency pack
-            </a>
-          </div>
-          <HeroMissionBar campaign={missionCampaign} />
-          <HeroRescueFaces pets={heroPets} caption={hero.facesCaption} />
-          <HeroDonationStories stories={hero.donationStories} />
-          <div data-hero-animate>
-            <HeroQuickActions actions={hero.quickActions} />
+          <div className="flex flex-col gap-6" data-hero-animate>
+            <div className="flex flex-wrap items-center gap-4">
+              <MagneticButton
+                href={hero.ctaHref}
+                onHover={() => trackEvent("cta_click_primary", { surface: "hero-primary" })}
+              >
+                {hero.ctaLabel}
+              </MagneticButton>
+              <button
+                type="button"
+                className="cta-muted text-xs uppercase tracking-[0.3em] text-white/70"
+                onClick={() => {
+                  trackEvent("cta_click_secondary", { surface: "hero" });
+                  window.open(CTA_REPORT, "_blank");
+                }}
+              >
+                Monthly report
+              </button>
+            </div>
+            <DonationAmounts amounts={hero.donateAmounts} href={hero.donateHref} label={hero.defaultSelectionLabel} />
+            <RecurringHint hint={hero.recurringHint} />
+            <LiveDonationPulse config={hero.liveCounter} prefersReducedMotion={prefersReducedMotion} />
+            <UrgencyBanner data={hero.urgency} />
+            <HeroSocialProof items={hero.socialProof} prefersReducedMotion={prefersReducedMotion} />
+            <RecentDonationsTicker ticker={hero.ticker} prefersReducedMotion={prefersReducedMotion} />
+            <SecurityBadgesBar badges={securityBadges} />
           </div>
         </div>
         <motion.aside
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45, duration: 0.8, ease: "easeOut" }}
-          className="flex flex-col gap-5"
+          className="glass-card flex h-fit flex-col gap-6 rounded-[2.4rem] border border-white/15 bg-white/8 p-6 text-white/80"
         >
-          <HeroMissionPanel
-            campaign={missionCampaign}
-            urgency={hero.urgency}
-            liveCounter={hero.liveCounter}
-            stats={hero.stats}
-            donation={{ amounts: hero.donateAmounts, href: hero.donateHref, label: hero.defaultSelectionLabel }}
-            prefersReducedMotion={prefersReducedMotion}
-          />
-          <RecentDonationsTicker ticker={hero.ticker} prefersReducedMotion={prefersReducedMotion} />
-          <SecurityBadgesBar badges={securityBadges} />
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] text-white/60">{hero.stats.label}</p>
+            <p className="mt-2 text-4xl font-semibold text-white">
+              <AnimatedCounter value={hero.stats.value} suffix={hero.stats.suffix} />
+            </p>
+          </div>
+          <HeroQuickActions actions={hero.quickActions} />
         </motion.aside>
-      </div>
-      <div className="section-shell relative z-10 mt-10">
-        <HeroSocialProof items={hero.socialProof} prefersReducedMotion={prefersReducedMotion} />
       </div>
       <ScrollPrompt />
     </section>
-  );
-}
-
-function HeroTrustMarks({ marks }: { marks: HeroTrustMark[] }) {
-  if (!marks?.length) return null;
-  return (
-    <div
-      data-hero-animate
-      className="flex flex-wrap items-center gap-3 rounded-full bg-white/80 px-5 py-2.5 text-[0.7rem] uppercase tracking-[0.3em] text-[#7d4f32] shadow-[0_12px_30px_rgba(153,101,63,0.15)]"
-    >
-      <span className="font-semibold text-[#a1623b]">Trusted by</span>
-      {marks.map((mark) => {
-        const content = (
-          <span className="flex items-center gap-1">
-            <span>{mark.label}</span>
-            <span className="text-[#c07a45]">•</span>
-            <span>{mark.caption}</span>
-          </span>
-        );
-        return mark.href ? (
-          <a key={mark.id} href={mark.href} className="transition hover:text-[#d1743c]" target="_blank" rel="noreferrer">
-            {content}
-          </a>
-        ) : (
-          <span key={mark.id}>{content}</span>
-        );
-      })}
-    </div>
-  );
-}
-
-function HeroHighlights({ items }: { items: string[] }) {
-  if (!items?.length) return null;
-  return (
-    <ul className="grid gap-3 text-sm text-[#4c2f1f]" data-hero-animate>
-      {items.map((item) => (
-        <li key={item} className="flex items-start gap-3">
-          <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#ffdcb5] text-xs font-semibold text-[#8c4f2c]">
-            ★
-          </span>
-          <span>{item}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function HeroRescueFaces({ pets, caption }: { pets: AdoptionPet[]; caption: string }) {
-  if (!pets.length || !caption) return null;
-  return (
-    <div className="flex flex-wrap items-center gap-4" data-hero-animate>
-      <div className="flex -space-x-3">
-        {pets.slice(0, 4).map((pet) => (
-          <div key={pet.id} className="h-12 w-12 overflow-hidden rounded-full border-2 border-white/70 shadow-[0_10px_25px_rgba(153,101,63,0.2)]">
-            <Image
-              src={pet.image}
-              alt={pet.name}
-              width={48}
-              height={48}
-              loading="lazy"
-              className="h-full w-full object-cover"
-            />
-          </div>
-        ))}
-      </div>
-      <p className="max-w-xs text-sm text-[#5a3523]">{caption}</p>
-    </div>
-  );
-}
-
-function HeroMissionPanel({
-  campaign,
-  urgency,
-  liveCounter,
-  stats,
-  donation,
-  prefersReducedMotion,
-}: {
-  campaign: EmergencyCampaign;
-  urgency: HeroContent["urgency"];
-  liveCounter: HeroContent["liveCounter"];
-  stats: StatMetric;
-  donation: { amounts: number[]; href: string; label?: string };
-  prefersReducedMotion: boolean;
-}) {
-  const countdown = useCountdown(campaign.deadlineIso, prefersReducedMotion);
-  const families = useRollingCounter(liveCounter, prefersReducedMotion);
-  const percent = campaign.goal > 0 ? Math.min(100, Math.round((campaign.raised / campaign.goal) * 100)) : 0;
-  const raisedLabel = `${campaign.currency}${campaign.raised.toLocaleString()}`;
-  const goalLabel = `${campaign.currency}${campaign.goal.toLocaleString()}`;
-  const countdownUnits = [
-    { label: "Days", value: countdown.days },
-    { label: "Hours", value: countdown.hours },
-    { label: "Mins", value: countdown.minutes },
-    { label: "Secs", value: countdown.seconds },
-  ];
-  const shareMessage = `I just backed Angels Haven to fly ${campaign.dogsWaiting} rescue dogs home tonight.`;
-
-  return (
-    <div className="glass-card flex flex-col gap-5 rounded-[2.4rem] border border-[#f1d4b8] bg-white/85 p-6 text-[#2b1a12] shadow-[0_24px_60px_rgba(153,101,63,0.18)]">
-      <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-[#9a5b35]">
-        <span>Mission control</span>
-        <span>{countdown.expired ? "Awaiting next launch" : `T-${countdown.hours}h ${countdown.minutes}m`}</span>
-      </div>
-      <h3 className="text-lg font-semibold text-[#2b1a12]">{campaign.title}</h3>
-      <p className="text-sm text-[#5a3523]">{campaign.description}</p>
-      <div className="grid grid-cols-4 gap-2 text-center text-[#2b1a12]">
-        {countdownUnits.map((unit) => (
-          <div key={unit.label} className="rounded-2xl border border-[#f1d4b8] bg-white/70 px-3 py-2">
-            <span className="text-xl font-semibold">{unit.value}</span>
-            <span className="block text-[0.6rem] uppercase tracking-[0.28em] text-[#9a5b35]">{unit.label}</span>
-          </div>
-        ))}
-      </div>
-      <div className="grid gap-3 text-sm text-[#2f1d15] sm:grid-cols-2">
-        <div className="rounded-2xl border border-[#f1d4b8] bg-white/75 px-4 py-3">
-          <span className="text-xs uppercase tracking-[0.3em] text-[#9a5b35]">Raised</span>
-          <span className="mt-1 block text-lg font-semibold text-[#2b1a12]">{raisedLabel}</span>
-        </div>
-        <div className="rounded-2xl border border-[#f1d4b8] bg-white/75 px-4 py-3">
-          <span className="text-xs uppercase tracking-[0.3em] text-[#9a5b35]">Goal</span>
-          <span className="mt-1 block text-lg font-semibold text-[#2b1a12]">{goalLabel}</span>
-        </div>
-        <div className="rounded-2xl border border-[#f1d4b8] bg-white/75 px-4 py-3">
-          <span className="text-xs uppercase tracking-[0.3em] text-[#9a5b35]">Dogs waiting</span>
-          <span className="mt-1 block text-lg font-semibold text-[#2b1a12]">{campaign.dogsWaiting}</span>
-        </div>
-        <div className="rounded-2xl border border-[#f1d4b8] bg-white/75 px-4 py-3">
-          <span className="text-xs uppercase tracking-[0.3em] text-[#9a5b35]">Families this week</span>
-          <span className="mt-1 block text-lg font-semibold text-[#2b1a12]">{families.toLocaleString()} {liveCounter.suffix}</span>
-        </div>
-        <div className="rounded-2xl border border-[#f1d4b8] bg-white/75 px-4 py-3 sm:col-span-2">
-          <span className="text-xs uppercase tracking-[0.3em] text-[#9a5b35]">{stats.label}</span>
-          <span className="mt-1 block text-lg font-semibold text-[#2b1a12]">
-            <AnimatedCounter value={stats.value} suffix={stats.suffix} />
-          </span>
-        </div>
-      </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-[#ffe6cd]">
-        <div className="h-full rounded-full bg-[#f25f5c]" style={{ width: `${percent}%` }} />
-      </div>
-      <span className="text-xs text-[#845534]">{urgency.footer}</span>
-      <DonationAmounts amounts={donation.amounts} href={donation.href} label={donation.label} />
-      <a
-        href={campaign.ctaHref}
-        className="inline-flex items-center justify-center rounded-full border border-[#f1d4b8] bg-white/70 px-4 py-2 text-xs uppercase tracking-[0.3em] text-[#7a4d31] transition hover:bg-white"
-        onClick={() => trackEvent("cta_click_primary", { surface: "hero-mission" })}
-      >
-        {campaign.ctaLabel}
-      </a>
-      <ShareButtons message={shareMessage} label="Spread the mission" />
-    </div>
-  );
-}
-
-function HeroMissionBar({ campaign }: { campaign: EmergencyCampaign }) {
-  const remaining = Math.max(campaign.goal - campaign.raised, 0);
-  const percent = campaign.goal > 0 ? Math.min(100, Math.round((campaign.raised / campaign.goal) * 100)) : 0;
-  return (
-    <div data-hero-animate className="glass-card flex flex-wrap items-center gap-4 rounded-[2rem] border border-[#f1d4b8] bg-white/80 px-5 py-4 text-sm text-[#2b1a12] shadow-[0_18px_42px_rgba(153,101,63,0.12)]">
-      <div className="flex flex-col gap-1">
-        <span className="text-xs uppercase tracking-[0.3em] text-[#a3653b]">Tonight&apos;s flight meter</span>
-        <strong className="text-lg font-semibold text-[#2b1a12]">
-          {remaining > 0 ? `${campaign.currency}${remaining.toLocaleString()} remaining` : "Charter fully funded"}
-        </strong>
-      </div>
-      <div className="flex w-full items-center gap-3">
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#ffe0c5]">
-          <div className="h-full rounded-full bg-[#f25f5c]" style={{ width: `${percent}%` }} />
-        </div>
-        <span className="text-xs font-semibold text-[#a3653b]">{percent}%</span>
-      </div>
-    </div>
   );
 }
 
@@ -1164,23 +909,23 @@ function HeroQuickActions({ actions }: { actions: HeroQuickAction[] }) {
   if (!actions.length) return null;
   return (
     <div className="flex flex-col gap-3 text-sm">
-      <span className="text-xs uppercase tracking-[0.28em] text-[#9a5b35]">Quick ways to help</span>
+      <span className="text-xs uppercase tracking-[0.28em] text-white/55">Quick ways to help</span>
       <div className="flex flex-col gap-3">
         {actions.map((action) => (
           <a
             key={action.id}
             href={action.href}
-            className="group flex items-start gap-3 rounded-[1.8rem] border border-[#f1d4b8] bg-white/75 px-4 py-3 text-[#2b1a12] shadow-[0_12px_30px_rgba(153,101,63,0.12)] transition hover:border-[#d98a52] hover:bg-white"
+            className="group flex items-start gap-3 rounded-[1.8rem] border border-white/12 bg-white/6 px-4 py-3 transition hover:border-white/35 hover:bg-white/12"
             onClick={() => trackEvent("hero_quick_action", { id: action.id })}
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ffd7b0] text-[#854b2a]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white">
               <QuickActionIcon icon={action.icon} />
             </span>
             <span className="flex flex-1 flex-col">
-              <span className="text-sm font-semibold text-[#2b1a12]">{action.label}</span>
-              <span className="text-[0.75rem] text-[#6b412a]">{action.caption}</span>
+              <span className="text-sm font-semibold text-white">{action.label}</span>
+              <span className="text-[0.75rem] text-white/65">{action.caption}</span>
             </span>
-            <span className="mt-1 text-xs uppercase tracking-[0.24em] text-[#9a5b35]">→</span>
+            <span className="mt-1 text-xs uppercase tracking-[0.24em] text-white/45">→</span>
           </a>
         ))}
       </div>
@@ -1188,35 +933,18 @@ function HeroQuickActions({ actions }: { actions: HeroQuickAction[] }) {
   );
 }
 
-function HeroDonationStories({ stories }: { stories: { amount: number; label: string }[] }) {
-  if (!stories.length) return null;
-  return (
-    <div className="flex flex-wrap gap-3" data-hero-animate>
-      {stories.map((story) => (
-        <span
-          key={story.amount}
-          className="inline-flex items-center gap-2 rounded-full border border-[#f1d4b8] bg-white/85 px-4 py-2 text-xs uppercase tracking-[0.3em] text-[#7a4d31] shadow-[0_12px_30px_rgba(153,101,63,0.12)]"
-        >
-          <span className="rounded-full bg-[#ffdcb5] px-2 py-1 text-[#8c4f2c]">£{story.amount}</span>
-          <span className="text-[0.7rem] normal-case tracking-normal">{story.label}</span>
-        </span>
-      ))}
-    </div>
-  );
-}
-
 function SecurityBadgesBar({ badges }: { badges: SecurityBadge[] }) {
   if (!badges.length) return null;
   return (
-    <div className="grid gap-3 rounded-[1.9rem] border border-[#f1d4b8] bg-white/75 px-5 py-4 text-[#5b3724] shadow-[0_18px_45px_rgba(153,101,63,0.16)] sm:grid-cols-2" aria-label="Payment and security assurances">
+    <div className="grid gap-3 rounded-[1.9rem] border border-white/12 bg-white/6 px-5 py-4 text-white/70 sm:grid-cols-2" aria-label="Payment and security assurances">
       {badges.map((badge) => (
         <div key={badge.id} className="flex items-start gap-3 text-xs uppercase tracking-[0.28em]">
-          <span className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#f1d4b8] bg-[#ffd7b0]/80 text-[0.7rem] font-semibold text-[#8c4f2c]">
+          <span className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[0.7rem] font-semibold text-white">
             ✓
           </span>
           <div className="flex flex-col gap-1 text-left">
-            <span className="text-[#2b1a12]">{badge.label}</span>
-            <span className="text-[0.65rem] normal-case tracking-normal text-[#6b412a]">{badge.description}</span>
+            <span className="text-white/85">{badge.label}</span>
+            <span className="text-[0.65rem] normal-case tracking-normal text-white/60">{badge.description}</span>
           </div>
         </div>
       ))}
@@ -1227,19 +955,19 @@ function SecurityBadgesBar({ badges }: { badges: SecurityBadge[] }) {
 function MediaRibbon({ items }: { items: MediaFeature[] }) {
   if (!items.length) return null;
   return (
-    <section className="snap-none border-y border-[#f1d4b8] bg-[#fff3e6] py-5 text-[#7a4d31]">
+    <section className="snap-none border-t border-b border-white/10 bg-[rgba(12,16,14,0.78)] py-5 text-white/70">
       <div className="section-shell flex flex-wrap items-center justify-center gap-6 text-[0.75rem] uppercase tracking-[0.28em]">
-        <span className="text-[#b16c3d]">As seen in</span>
+        <span className="text-white/50">As seen in</span>
         {items.map((item) => (
           <a
             key={item.id}
             href={item.href}
-            className="flex items-center gap-2 rounded-full border border-[#f1d4b8] bg-white/70 px-4 py-2 text-[#2b1a12] shadow-[0_12px_30px_rgba(153,101,63,0.12)] transition hover:border-[#d98a52] hover:bg-white"
+            className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-white/75 transition hover:border-white/35 hover:text-white"
             target="_blank"
             rel="noreferrer"
           >
-            <span className="font-semibold text-[#2b1a12]">{item.outlet}</span>
-            <span className="hidden text-[0.65rem] normal-case tracking-normal text-[#7a4d31] sm:inline">{item.label}</span>
+            <span className="font-semibold text-white/85">{item.outlet}</span>
+            <span className="hidden text-[0.65rem] normal-case tracking-normal text-white/60 sm:inline">{item.label}</span>
           </a>
         ))}
       </div>
@@ -1250,16 +978,13 @@ function MediaRibbon({ items }: { items: MediaFeature[] }) {
 function GlobalStatsBand({ stats }: { stats: GlobalStat[] }) {
   if (!stats.length) return null;
   return (
-    <section className="snap-none bg-[#ffeede] py-10 text-[#2b1a12]" aria-label="Live rescue statistics">
+    <section className="snap-none bg-[#0d1612] py-10 text-white" aria-label="Live rescue statistics">
       <div className="section-shell grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <div
-            key={stat.id}
-            className="glass-card flex flex-col gap-2 rounded-[1.9rem] border border-[#f1d4b8] bg-white/80 p-5 text-[#2b1a12] shadow-[0_24px_60px_rgba(153,101,63,0.15)]"
-          >
-            <span className="text-3xl font-semibold text-[#2b1a12]">{stat.value}</span>
-            <span className="text-xs uppercase tracking-[0.3em] text-[#a3653b]">{stat.label}</span>
-            <p className="text-sm text-[#5a3523]">{stat.detail}</p>
+          <div key={stat.id} className="glass-card flex flex-col gap-2 rounded-[1.9rem] border border-white/12 bg-white/6 p-5 text-white/85">
+            <span className="text-3xl font-semibold text-white">{stat.value}</span>
+            <span className="text-xs uppercase tracking-[0.3em] text-white/55">{stat.label}</span>
+            <p className="text-sm text-white/65">{stat.detail}</p>
           </div>
         ))}
       </div>
@@ -1270,44 +995,44 @@ function GlobalStatsBand({ stats }: { stats: GlobalStat[] }) {
 function EmergencyFundMeter({ campaign }: { campaign: EmergencyCampaign }) {
   const percent = Math.min(100, Math.round((campaign.raised / campaign.goal) * 100));
   return (
-    <section className="snap-none bg-[#fff5eb] py-20 text-[#2b1a12]" aria-live="polite">
-      <div className="section-shell grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,360px)] lg:items-center">
+    <section className="snap-none bg-[#122017] py-20 text-white" aria-live="polite">
+      <div className="section-shell grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,340px)] lg:items-center">
         <div className="space-y-5">
-          <span className="inline-flex w-fit items-center rounded-full border border-[#f1d4b8] bg-white/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-[#9a5b35] shadow-[0_12px_30px_rgba(153,101,63,0.15)]">
+          <span className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
             Emergency flight fund
           </span>
-          <h2 className="heading-xl text-[#2b1a12]">{campaign.title}</h2>
-          <p className="max-w-2xl text-sm text-[#5a3523]">{campaign.description}</p>
-          <div className="glass-card flex flex-col gap-4 rounded-[2rem] border border-[#f1d4b8] bg-white/85 px-6 py-5 text-[#2b1a12] shadow-[0_24px_60px_rgba(153,101,63,0.18)]">
+          <h2 className="heading-xl">{campaign.title}</h2>
+          <p className="max-w-2xl text-sm text-white/70">{campaign.description}</p>
+          <div className="glass-card flex flex-col gap-4 rounded-[2rem] border border-white/12 bg-white/8 px-6 py-5 text-white/85">
             <div className="flex flex-wrap items-baseline gap-4">
               <div>
-                <span className="text-xs uppercase tracking-[0.3em] text-[#a3653b]">Raised</span>
-                <p className="text-3xl font-semibold text-[#2b1a12]">
+                <span className="text-xs uppercase tracking-[0.3em] text-white/55">Raised</span>
+                <p className="text-3xl font-semibold text-white">
                   {campaign.currency}{campaign.raised.toLocaleString()}
                 </p>
               </div>
               <div>
-                <span className="text-xs uppercase tracking-[0.3em] text-[#a3653b]">Goal</span>
-                <p className="text-lg text-[#4c2f1f]">
+                <span className="text-xs uppercase tracking-[0.3em] text-white/55">Goal</span>
+                <p className="text-lg text-white/75">
                   {campaign.currency}{campaign.goal.toLocaleString()}
                 </p>
               </div>
               <div>
-                <span className="text-xs uppercase tracking-[0.3em] text-[#a3653b]">Dogs waiting</span>
-                <p className="text-lg text-[#4c2f1f]">{campaign.dogsWaiting}</p>
+                <span className="text-xs uppercase tracking-[0.3em] text-white/55">Dogs waiting</span>
+                <p className="text-lg text-white/75">{campaign.dogsWaiting}</p>
               </div>
             </div>
-            <div className="h-3 w-full overflow-hidden rounded-full bg-[#ffe0c5]">
-              <div className="h-full rounded-full bg-[#f25f5c]" style={{ width: `${percent}%` }} />
+            <div className="h-3 w-full rounded-full bg-white/15">
+              <div className="h-full rounded-full bg-white" style={{ width: `${percent}%` }} />
             </div>
-            <p className="text-xs uppercase tracking-[0.3em] text-[#a3653b]">Target take-off {campaign.deadline}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-white/55">Target take-off {campaign.deadline}</p>
             <MagneticButton href={campaign.ctaHref} onHover={() => trackEvent("cta_click_primary", { surface: "emergency" })}>
               {campaign.ctaLabel}
             </MagneticButton>
           </div>
         </div>
-        <div className="glass-card space-y-4 rounded-[2.1rem] border border-[#f1d4b8] bg-white/85 p-6 text-sm text-[#4c2f1f] shadow-[0_24px_60px_rgba(153,101,63,0.18)]">
-          <h3 className="text-base font-semibold text-[#2b1a12]">Tonight&apos;s flight manifest</h3>
+        <div className="glass-card space-y-4 rounded-[2.1rem] border border-white/12 bg-white/8 p-6 text-sm text-white/70">
+          <h3 className="text-base font-semibold text-white">Tonight&apos;s flight manifest</h3>
           <p>7 dogs cleared to fly. Each £120 block funds DEFRA crates, vet sign-off, and volunteer escort costs.</p>
           <p>Livestream updates drop at 21:00 TRT inside the Facebook group once the meter hits 100%.</p>
         </div>
@@ -1373,24 +1098,24 @@ function GivingCalculator({ config }: { config: LandingContent["givingCalculator
 
 function ImpactPulse({ summary }: { summary: ImpactSummary }) {
   return (
-    <section className="snap-none border-y border-[#f1d4b8] bg-[#fff0e0] py-6 text-[#2b1a12]">
-      <div className="section-shell flex flex-wrap items-center justify-between gap-4 text-sm text-[#4c2f1f]">
+    <section className="snap-none border-t border-b border-white/10 bg-[rgba(12,16,14,0.78)] py-6 text-white">
+      <div className="section-shell flex flex-wrap items-center justify-between gap-4 text-sm text-white/75">
         <div className="flex items-center gap-3">
-          <span className="inline-flex h-3 w-3 animate-pulse rounded-full bg-[#f25f5c]" aria-hidden />
-          <span className="uppercase tracking-[0.32em] text-[#a3653b]">{summary.headline}</span>
+          <span className="inline-flex h-3 w-3 animate-pulse rounded-full bg-[#ffb88c]" aria-hidden />
+          <span className="uppercase tracking-[0.32em] text-white/55">{summary.headline}</span>
         </div>
         <div className="flex flex-wrap gap-6">
           <span className="flex items-center gap-2">
-            <strong className="text-[#2b1a12]">{summary.currency}{summary.totalRaised.toLocaleString()}</strong>
-          <span className="uppercase tracking-[0.24em] text-[#a3653b]">raised last 24h</span>
+            <strong className="text-white">{summary.currency}{summary.totalRaised.toLocaleString()}</strong>
+            <span className="uppercase tracking-[0.24em] text-white/55">raised last 24h</span>
           </span>
           <span className="flex items-center gap-2">
-            <strong className="text-[#2b1a12]">{summary.supporters}</strong>
-            <span className="uppercase tracking-[0.24em] text-[#a3653b]">supporters</span>
+            <strong className="text-white">{summary.supporters}</strong>
+            <span className="uppercase tracking-[0.24em] text-white/55">supporters</span>
           </span>
           <span className="flex items-center gap-2">
-            <strong className="text-[#2b1a12]">{summary.flightsBooked}</strong>
-            <span className="uppercase tracking-[0.24em] text-[#a3653b]">flights booked</span>
+            <strong className="text-white">{summary.flightsBooked}</strong>
+            <span className="uppercase tracking-[0.24em] text-white/55">flights booked</span>
           </span>
         </div>
       </div>
@@ -1557,9 +1282,7 @@ function DonationAmounts({ amounts, href, label }: { amounts: number[]; href: st
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.96 }}
             className={`inline-flex min-w-[72px] items-center justify-center rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.28em] transition ${
-              isActive
-                ? "bg-[#f25f5c] text-white shadow-[0_12px_30px_rgba(242,95,92,0.35)]"
-                : "border border-[#f1d4b8] text-[#6b412a] hover:border-[#d98a52] hover:bg-white"
+              isActive ? "bg-white text-[#101815]" : "border border-white/20 text-white/70 hover:text-white"
             }`}
             onClick={() => {
               setActive(amount);
@@ -1572,11 +1295,42 @@ function DonationAmounts({ amounts, href, label }: { amounts: number[]; href: st
         );
       })}
       {label && (
-        <div className="mt-2 flex w-full items-center gap-2 text-xs text-[#8f5936]">
-          <span className="text-base text-[#f25f5c]">★</span>
+        <div className="mt-2 flex w-full items-center gap-2 text-xs text-white/70">
+          <span className="text-base">★</span>
           <span>{label}</span>
         </div>
       )}
+    </div>
+  );
+}
+
+function LiveDonationPulse({
+  config,
+  prefersReducedMotion,
+}: {
+  config: HeroContent["liveCounter"];
+  prefersReducedMotion: boolean;
+}) {
+  const { initial, intervalMs, minIncrement, maxIncrement, label, suffix } = config;
+  const [count, setCount] = useState(initial);
+
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    const interval = window.setInterval(() => {
+      setCount((prev) => prev + Math.floor(Math.random() * (maxIncrement - minIncrement + 1)) + minIncrement);
+    }, intervalMs);
+    return () => window.clearInterval(interval);
+  }, [intervalMs, minIncrement, maxIncrement, prefersReducedMotion]);
+
+  return (
+    <div className="glass-card flex items-center gap-4 rounded-[2rem] border border-white/15 bg-white/8 px-5 py-4 text-white/80">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-sm font-semibold text-white">
+        ⏱
+      </div>
+      <div className="flex flex-col leading-tight">
+        <span className="text-xs uppercase tracking-[0.28em] text-white/55">{label}</span>
+        <span className="text-lg font-semibold text-white">{count.toLocaleString()} {suffix}</span>
+      </div>
     </div>
   );
 }
@@ -1586,21 +1340,21 @@ function HeroSocialProof({ items, prefersReducedMotion }: { items: HeroContent["
   return (
     <div className="grid gap-3 md:grid-cols-3">
       {items.map((item) => (
-        <div key={item.id} className="glass-card flex flex-col gap-3 rounded-[1.6rem] border border-[#f1d4b8] bg-white/80 px-4 py-4 text-[#2b1a12]">
+        <div key={item.id} className="glass-card flex flex-col gap-3 rounded-[1.6rem] border border-white/12 bg-white/6 px-4 py-4 text-white/80">
           {item.media ? (
-            <div className="relative h-32 overflow-hidden rounded-[1.2rem] border border-[#f1d4b8]">
-              <Image src={item.media.poster} alt={item.media.alt} fill className={`object-cover transition-opacity duration-500 ${item.media.video && !prefersReducedMotion ? "opacity-0" : "opacity-100"}`} />
+            <div className="relative h-32 overflow-hidden rounded-[1.2rem] border border-white/12">
+              <Image src={item.media.poster} alt={item.media.alt} fill className={`object-cover transition-opacity duration-500 ${item.media.video && !prefersReducedMotion ? 'opacity-0' : 'opacity-100'}`} />
               {item.media.video && !prefersReducedMotion && (
                 <video className="absolute inset-0 h-full w-full object-cover" autoPlay muted loop playsInline poster={item.media.poster}>
                   <source src={item.media.video} type="video/mp4" />
                 </video>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1e120b]/45 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-black/0" />
             </div>
           ) : null}
           <div className="flex flex-col gap-1">
-            <span className="text-lg font-semibold text-[#2b1a12]">{item.metric}</span>
-            <span className="text-xs uppercase tracking-[0.28em] text-[#8f5936]">{item.caption}</span>
+            <span className="text-lg font-semibold text-white">{item.metric}</span>
+            <span className="text-xs uppercase tracking-[0.28em] text-white/55">{item.caption}</span>
           </div>
         </div>
       ))}
@@ -1629,28 +1383,49 @@ function RecentDonationsTicker({ ticker, prefersReducedMotion }: { ticker: HeroC
   }, [prefersReducedMotion, entries.length]);
 
   return (
-    <div className="glass-card flex flex-col gap-3 rounded-[2rem] border border-[#f1d4b8] bg-white/80 px-5 py-4 text-[#2b1a12]" aria-live="polite">
-      <div className="flex items-center justify-between text-xs uppercase tracking-[0.28em] text-[#9a5b35]">
+    <div className="glass-card flex flex-col gap-3 rounded-[2rem] border border-white/12 bg-white/8 px-5 py-4 text-white/85" aria-live="polite">
+      <div className="flex items-center justify-between text-xs uppercase tracking-[0.28em] text-white/55">
         <span>{ticker.headline}</span>
         <span className="inline-flex items-center gap-1 text-[0.65rem]">
-          <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-[#f25f5c]" aria-hidden="true" />
+          <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-[#ff6f61]" aria-hidden="true" />
           Live
         </span>
       </div>
-      <ul className="flex flex-col gap-3 text-sm text-[#2f1d15]">
+      <ul className="flex flex-col gap-3 text-sm text-white/80">
         {entries.slice(0, 4).map((entry) => (
-          <li key={entry.id} className="flex items-center justify-between gap-3 rounded-2xl border border-[#f1d4b8] bg-white/85 px-3 py-2">
+          <li key={entry.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/6 px-3 py-2">
             <div className="flex flex-col leading-tight">
-              <span className="font-semibold text-[#2b1a12]">{entry.name}</span>
-              <span className="text-xs uppercase tracking-[0.24em] text-[#8f5936]">{entry.city} • {entry.method}</span>
+              <span className="font-semibold text-white">{entry.name}</span>
+              <span className="text-xs uppercase tracking-[0.24em] text-white/55">{entry.city} • {entry.method}</span>
             </div>
             <div className="flex flex-col items-end leading-tight">
-              <span className="text-base font-semibold text-[#2b1a12]">£{entry.amount}</span>
-              <span className="text-xs text-[#8f5936]">{entry.minutesAgo}m ago</span>
+              <span className="text-base font-semibold text-white">£{entry.amount}</span>
+              <span className="text-xs text-white/55">{entry.minutesAgo}m ago</span>
             </div>
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+
+function UrgencyBanner({ data }: { data: HeroContent["urgency"] }) {
+  const percent = Math.min(100, Math.max(0, data.goalPercent));
+  return (
+    <div className="glass-card flex flex-col gap-3 rounded-[2rem] border border-white/12 bg-white/8 px-5 py-4 text-white/80">
+      <div className="flex items-center justify-between text-xs uppercase tracking-[0.28em] text-white/55">
+        <span>{data.remainingLabel}</span>
+        <span>{data.goalLabel}</span>
+      </div>
+      <div className="flex items-baseline justify-between">
+        <span className="text-2xl font-semibold text-white">{data.remainingValue}</span>
+        <span className="text-xs text-white/60">{percent}%</span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-white/15">
+        <div className="h-full rounded-full bg-white" style={{ width: `${percent}%` }} />
+      </div>
+      <span className="text-xs text-white/60">{data.footer}</span>
     </div>
   );
 }
@@ -1835,13 +1610,18 @@ function FooterBar({ content }: { content: FooterContent }) {
   );
 }
 
+function RecurringHint({ hint }: { hint: string }) {
+  if (!hint) return null;
+  return <p className="text-xs text-white/60">{hint}</p>;
+}
+
 function USPStrip({ items }: { items: string[] }) {
   return (
-    <section className="snap-none border-y border-[#f1d4b8] bg-[#fff3e6] py-6 text-[0.7rem] uppercase tracking-[0.35em] text-[#7a4d31] backdrop-blur">
+    <section className="snap-none border-t border-b border-white/10 bg-[rgba(12,16,14,0.72)] py-6 text-[0.7rem] uppercase tracking-[0.35em] text-white/60 backdrop-blur">
       <div className="section-shell flex flex-wrap items-center justify-between gap-6">
         {items.map((item) => (
           <span key={item} className="flex items-center gap-3">
-            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#f25f5c]/70" />
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-white/40" />
             {item}
           </span>
         ))}
@@ -1893,14 +1673,7 @@ function SmartVideo({ media, prefersReducedMotion, onPlay }: { media: MediaAsset
 
   return (
     <div ref={containerRef} className="relative overflow-hidden rounded-[1.8rem] border border-white/12 bg-white/5">
-      <Image
-        src={media.poster}
-        alt={media.alt}
-        width={720}
-        height={405}
-        loading="lazy"
-        className={`h-full w-full object-cover transition-opacity duration-500 ${shouldPlay && !prefersReducedMotion && media.video ? "opacity-0" : "opacity-100"}`}
-      />
+      <Image src={media.poster} alt={media.alt} width={720} height={405} className={`h-full w-full object-cover transition-opacity duration-500 ${shouldPlay && !prefersReducedMotion && media.video ? "opacity-0" : "opacity-100"}`} />
       {!prefersReducedMotion && media.video && (
         <video
           ref={videoRef}
@@ -1908,7 +1681,7 @@ function SmartVideo({ media, prefersReducedMotion, onPlay }: { media: MediaAsset
           muted
           loop
           playsInline
-          preload="metadata"
+          preload="none"
           poster={media.poster}
         >
           <source src={media.video} type="video/mp4" />
@@ -2428,20 +2201,18 @@ function DonorWall({ entries }: { entries: DonorEntry[] }) {
 function RescueReels({ reels, prefersReducedMotion }: { reels: RescueReel[]; prefersReducedMotion: boolean }) {
   if (!reels.length) return null;
   return (
-    <section id="reels" className="snap-start bg-[#fff7f0] py-24 text-[#2b1a12]">
+    <section id="reels" className="snap-start bg-[#0e1a16] py-24 text-white">
       <div className="section-shell space-y-10">
-        <div className="space-y-3 text-center md:text-left">
-          <span className="text-xs font-semibold uppercase tracking-[0.32em] text-[#a3653b]">Rescue reel series</span>
-          <h2 className="heading-xl text-[#2b1a12]">Watch recoveries from sanctuary morning to sofa night.</h2>
-          <p className="mx-auto max-w-3xl text-sm text-[#5a3523] md:mx-0">
-            These daily clips come straight from the sanctuary team and new adopters so you can audit every joyful milestone.
-          </p>
+        <div className="space-y-3">
+          <span className="text-xs font-semibold uppercase tracking-[0.32em] text-white/60">Rescue reel series</span>
+          <h2 className="heading-xl">Watch recoveries from sanctuary morning to sofa night.</h2>
+          <p className="max-w-3xl text-sm text-white/70">Short-form clips kept fresh daily by the sanctuary team and adopters so supporters can audit impact in real time.</p>
         </div>
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {reels.map((reel, index) => (
             <motion.article
               key={reel.id}
-              className="glass-card flex h-full flex-col gap-4 rounded-[2.1rem] border border-[#f1d4b8] bg-white/85 p-6 text-[#2b1a12] shadow-[0_24px_60px_rgba(153,101,63,0.15)]"
+              className="glass-card flex h-full flex-col gap-4 rounded-[2.1rem] border border-white/12 bg-white/8 p-6 text-white"
               initial={prefersReducedMotion ? false : { opacity: 0, y: 28 }}
               whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.35 }}
@@ -2449,16 +2220,9 @@ function RescueReels({ reels, prefersReducedMotion }: { reels: RescueReel[]; pre
             >
               <SmartVideo media={reel.media} prefersReducedMotion={prefersReducedMotion} onPlay={() => trackEvent("rescue_reel_play", { id: reel.id })} />
               <div className="space-y-2">
-                <h3 className="heading-sm text-[#2b1a12]">{reel.title}</h3>
-                <p className="text-sm text-[#5a3523]">{reel.description}</p>
+                <h3 className="heading-sm text-white">{reel.title}</h3>
+                <p className="text-sm text-white/70">{reel.description}</p>
               </div>
-              <MagneticButton
-                href={CTA_PRIMARY}
-                className="self-start px-6 text-xs uppercase tracking-[0.3em]"
-                onHover={() => trackEvent("rescue_reel_cta", { id: reel.id })}
-              >
-                Fund the next rescue
-              </MagneticButton>
             </motion.article>
           ))}
         </div>
@@ -2685,14 +2449,12 @@ function ExitIntentModal({
   donateHref,
   adoptionHref,
   prefersReducedMotion,
-  shareMessage,
 }: {
   open: boolean;
   onClose: () => void;
   donateHref: string;
   adoptionHref: string;
   prefersReducedMotion: boolean;
-  shareMessage: string;
 }) {
   return (
     <AnimatePresence>
@@ -2751,9 +2513,6 @@ function ExitIntentModal({
                 Maybe later
               </button>
             </div>
-            <div className="mt-6">
-              <ShareButtons message={shareMessage} label="Share with your circle" />
-            </div>
           </motion.div>
         </motion.div>
       )}
@@ -2768,10 +2527,6 @@ export function Landing({ content }: { content: LandingContent }) {
   const [exitIntentDismissed, setExitIntentDismissed] = useState(false);
 
   const sponsorLabel = content.hero.quickActions.find((action) => action.icon === "sponsor")?.label ?? "Sponsor tonight's meals";
-  const campaignRemaining = Math.max(content.emergency.goal - content.emergency.raised, 0);
-  const exitShareMessage = campaignRemaining > 0
-    ? `I'm helping Angels Haven close the £${campaignRemaining.toLocaleString()} gap so tonight's dogs can fly home.`
-    : "Angels Haven's rescue flight takes off tonight—join me in keeping the corridor open.";
 
   usePointerShift(prefersReducedMotion);
   useSmoothScroll(prefersReducedMotion);
@@ -2801,7 +2556,7 @@ export function Landing({ content }: { content: LandingContent }) {
   };
 
   return (
-    <main className="relative flex min-h-screen snap-y snap-mandatory flex-col text-[#2b1a12]">
+    <main className="relative flex min-h-screen snap-y snap-mandatory flex-col text-white">
       <Navigation content={content} solid={navSolid} />
       <RailIndicators />
       <Hero content={content} prefersReducedMotion={prefersReducedMotion} />
@@ -2837,7 +2592,6 @@ export function Landing({ content }: { content: LandingContent }) {
         donateHref={content.hero.donateHref}
         adoptionHref={content.hero.ctaHref}
         prefersReducedMotion={prefersReducedMotion}
-        shareMessage={exitShareMessage}
       />
     </main>
   );
@@ -2845,86 +2599,54 @@ export function Landing({ content }: { content: LandingContent }) {
 
 const EN_CONTENT: LandingContent = {
   hero: {
-    eyebrow: "Live rescue mission • Heathrow charter",
-    headline: "Be the person who gets a rescue dog onto tonight's flight home.",
-    subheadline: "Seven crate-trained friends are packed for Heathrow. Your £1 keeps meals moving; £120 closes the charter gap.",
-    summary: "Charity Commission #1204821 • DEFRA-licensed corridor • WhatsApp impact drops within minutes",
-    highlights: [
-      "Watch the live countdown and see crates fill in real time.",
-      "Meet Nova, Argo, Lale, and tonight's flight manifest.",
-      "Every pound you send arrives with receipts, vet notes, and arrival selfies.",
-    ],
-    facesCaption: "Nova, Argo and Lale are waiting on the runway—your gift moves them home tonight.",
-    ctaLabel: "Launch tonight's flight",
+    eyebrow: "Angels Haven • Adopt ↔ Sponsor",
+    headline: "Adopt. Sponsor. Keep rescue dogs safe tonight.",
+    subheadline: "Choose a companion ready to fly from Turkey or keep our rescue corridor funded with a micro-sponsor.",
+    summary: "Charity Commission #1204821 • DEFRA travel compliant • Weekly impact livestreams",
+    ctaLabel: "Meet the adoption pack",
     ctaHref: "#adopt",
     donateHref: CTA_PRIMARY,
-    donateAmounts: [8, 25, 60, 120],
-    defaultSelectionLabel: "Choose a mission boost",
-    donationStories: [
-      { amount: 8, label: "Delivers 3 bowls of recovery stew" },
-      { amount: 25, label: "Files export papers for one dog" },
-      { amount: 60, label: "Covers a DEFRA crate share" },
-      { amount: 120, label: "Books tonight's charter seat" },
-    ],
+    donateAmounts: [1, 8, 25, 100],
+    defaultSelectionLabel: "Quick sponsor picks",
     stats: {
-      label: "Dogs funded this month",
+      label: "Homes matched this month",
       value: 18,
       suffix: "",
     },
     quickActions: [
       {
-        id: "sponsor-crate",
-        label: "Sponsor a crate",
-        caption: "£60 splits a DEFRA crate three ways",
-        href: CTA_PRIMARY,
-        icon: "sponsor",
-      },
-      {
         id: "adopt-pack",
-        label: "Meet the flight pack",
-        caption: "Read the adoption dossiers",
+        label: "Adopt from the pack",
+        caption: "Browse dogs cleared for travel",
         href: "#adopt",
         icon: "adopt",
       },
       {
-        id: "escort-flight",
-        label: "Escort a flight",
-        caption: "Join the next Heathrow handover",
-        href: "mailto:hello@angelshaven.org?subject=Flight%20escort%20volunteer",
+        id: "sponsor-meal",
+        label: "Sponsor tonight's meals",
+        caption: "£8 covers food & meds",
+        href: CTA_PRIMARY,
+        icon: "sponsor",
+      },
+      {
+        id: "plan-visit",
+        label: "Plan a sanctuary visit",
+        caption: "Meet the team or escort a flight",
+        href: "mailto:hello@angelshaven.org?subject=Sanctuary%20visit",
         icon: "visit",
       },
       {
-        id: "join-briefing",
-        label: "Join mission brief",
-        caption: "14.6k neighbours in the live ops group",
+        id: "join-group",
+        label: "Join the rescue group",
+        caption: "14.6k neighbours share nightly updates",
         href: CTA_COMMUNITY,
         icon: "community",
-      },
-    ],
-    trustMarks: [
-      {
-        id: "charity",
-        label: "Charity Commission",
-        caption: "Reg. 1204821",
-        href: "https://register-of-charities.charitycommission.gov.uk/charity-details/?regid=1204821",
-      },
-      {
-        id: "wired",
-        label: "WIRED Impact",
-        caption: "Transparency short list 2024",
-        href: "https://www.wired.co.uk",
-      },
-      {
-        id: "defra",
-        label: "DEFRA Travel",
-        caption: "Licensed rescue corridor",
-        href: "https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs",
       },
     ],
     media: {
       poster: "/images/hero-poster.avif",
       video: "/videos/hero-pack.mp4",
-      alt: "Rescue dogs racing across sanctuary grass",
+      alt: "Group of rescue dogs looking down toward the camera",
     },
     liveCounter: {
       label: "Families applying this week",
@@ -2945,19 +2667,19 @@ const EN_CONTENT: LandingContent = {
           alt: "Families greeting new rescue dogs",
         },
       },
-      { id: "group", metric: "👥 14.6k neighbours", caption: "Active inside the live ops group" },
-      { id: "audit", metric: "Audit complete", caption: "Paws & Claws LLP FY23 assurance" },
+      { id: "group", metric: "👥 14.6k neighbours", caption: "Active in our Facebook rescue hub" },
+      { id: "charity", metric: "Charity #1204821", caption: "UK Charity Commission verified" },
     ],
     urgency: {
-      remainingLabel: "Dogs cleared for take-off",
+      remainingLabel: "Dogs cleared to fly",
       remainingValue: "7",
       goalLabel: "Flight fund 73% complete",
       goalPercent: 73,
-      footer: "Two escorts and vet clearances left—help us hit 100% before Sunday night.",
+      footer: "Sponsor final vet checks before Sunday night.",
     },
-    recurringHint: "Become a monthly guardian to keep the corridor open every weekend.",
+    recurringHint: "Set a monthly sponsor share so transport never pauses.",
     ticker: {
-      headline: "Live donor feed",
+      headline: "Recent supporters",
       entries: [
         { id: "sarah-lon", name: "Sarah L.", amount: 25, city: "London, UK", minutesAgo: 3, method: "Apple Pay" },
         { id: "umit-izm", name: "Umit K.", amount: 8, city: "Izmir, TR", minutesAgo: 6, method: "Stripe" },
@@ -3340,7 +3062,6 @@ const EN_CONTENT: LandingContent = {
     currency: "£",
     dogsWaiting: 7,
     deadline: "Sunday 19:00 GMT",
-    deadlineIso: "2025-02-16T19:00:00Z",
     ctaLabel: "Fund the last mile",
     ctaHref: CTA_PRIMARY,
   },
