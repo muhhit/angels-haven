@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Inter, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
-import { CookieConsent } from "../components/CookieConsent";
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -18,8 +17,7 @@ const structuredData = {
   "sameAs": [
     "https://instagram.com/angelshavenpaws",
     "https://youtube.com/@angelshaven",
-    "https://www.linkedin.com/company/angelshaven",
-    "https://www.facebook.com/groups/480707493946285"
+    "https://www.linkedin.com/company/angelshaven"
   ],
   "address": {
     "@type": "PostalAddress",
@@ -41,25 +39,6 @@ const structuredData = {
   "taxID": "1204821"
 };
 
-const donationSchema = {
-  "@context": "https://schema.org",
-  "@type": "DonateAction",
-  "name": "Sponsor a rescue dog",
-  "target": {
-    "@type": "EntryPoint",
-    "urlTemplate": "https://angels-haven.vercel.app/#donate"
-  },
-  "recipient": {
-    "@type": "NGO",
-    "name": "Angels Haven for Paws",
-    "taxID": "1204821"
-  },
-  "result": {
-    "@type": "Thing",
-    "name": "Safe transport, vet care, and meals for rescue dogs"
-  }
-};
-
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -78,13 +57,6 @@ export const metadata: Metadata = {
   description:
     "£1 = one meal. Transparent, secure donations for rescue dogs across the UK & Turkey. Sponsor a paw today.",
   metadataBase: new URL("https://angels-haven.vercel.app"),
-  keywords: [
-    "dog rescue donations",
-    "turkey dog adoption",
-    "animal sanctuary transparency",
-    "sponsor rescue flight",
-    "monthly dog charity"
-  ],
   openGraph: {
     title: "Angels Haven for Paws — Donate to Dog Rescue (UK/TR)",
     description:
@@ -121,10 +93,6 @@ export default function RootLayout({
         <Script id="ld-organization" type="application/ld+json" strategy="afterInteractive">
           {JSON.stringify(structuredData)}
         </Script>
-        <Script id="ld-donate" type="application/ld+json" strategy="afterInteractive">
-          {JSON.stringify(donationSchema)}
-        </Script>
-        <CookieConsent />
         {children}
       </body>
     </html>

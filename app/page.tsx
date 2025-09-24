@@ -28,7 +28,7 @@ type HeroQuickAction = {
   label: string;
   caption: string;
   href: string;
-  icon: "adopt" | "sponsor" | "visit" | "donate" | "community";
+  icon: "adopt" | "sponsor" | "visit" | "donate";
 };
 
 type HeroContent = {
@@ -135,155 +135,6 @@ type AdoptionContent = {
   };
 };
 
-type SanctuaryPillar = {
-  id: string;
-  title: string;
-  copy: string;
-};
-
-type SanctuaryStat = {
-  id: string;
-  value: string;
-  label: string;
-};
-
-type SanctuaryContent = {
-  eyebrow: string;
-  headline: string;
-  body: string;
-  highlight: string;
-  image: string;
-  quote: { text: string; name: string; role: string };
-  pillars: SanctuaryPillar[];
-  stats: SanctuaryStat[];
-  cta: {
-    primaryLabel: string;
-    primaryHref: string;
-    secondaryLabel: string;
-    secondaryHref: string;
-    note: string;
-  };
-};
-
-type CertificateItem = {
-  id: string;
-  title: string;
-  issuer: string;
-  year: string;
-  summary: string;
-  href: string;
-};
-
-type FounderStoryContent = {
-  eyebrow: string;
-  headline: string;
-  paragraphs: string[];
-  credentials: { id: string; label: string; detail: string }[];
-  stats: { id: string; value: string; caption: string }[];
-  image: string;
-  video?: string;
-};
-
-type SecurityBadge = {
-  id: string;
-  label: string;
-  description: string;
-};
-
-type MediaFeature = {
-  id: string;
-  label: string;
-  outlet: string;
-  href: string;
-};
-
-type DonorEntry = {
-  id: string;
-  name: string;
-  amount: number;
-  city: string;
-  recurring: boolean;
-  since: string;
-};
-
-type GlobalStat = {
-  id: string;
-  label: string;
-  value: string;
-  detail: string;
-};
-
-type PartnerLogo = {
-  id: string;
-  name: string;
-  href: string;
-  description: string;
-};
-
-type RescueReel = {
-  id: string;
-  title: string;
-  description: string;
-  media: MediaAsset;
-};
-
-type EmergencyCampaign = {
-  title: string;
-  description: string;
-  goal: number;
-  raised: number;
-  currency: string;
-  dogsWaiting: number;
-  deadline: string;
-  ctaLabel: string;
-  ctaHref: string;
-};
-
-type GivingCalculatorStep = {
-  amount: number;
-  label: string;
-  description: string;
-};
-
-type ImpactSummary = {
-  headline: string;
-  totalRaised: number;
-  currency: string;
-  supporters: number;
-  flightsBooked: number;
-};
-
-type CommunityHighlight = {
-  id: string;
-  title: string;
-  copy: string;
-};
-
-type CommunityStat = {
-  id: string;
-  value: string;
-  label: string;
-};
-
-type CommunityContent = {
-  eyebrow: string;
-  headline: string;
-  description: string;
-  fb: { members: string; href: string; label: string; proof: string };
-  highlights: CommunityHighlight[];
-  stats: CommunityStat[];
-  cta: { label: string; href: string; secondaryLabel: string; secondaryHref: string };
-};
-
-type Testimonial = {
-  id: string;
-  quote: string;
-  name: string;
-  role: string;
-  rating: number;
-  media?: MediaAsset;
-};
-
 type FAQItem = {
   question: string;
   answer: string;
@@ -373,24 +224,6 @@ export type LandingContent = {
   steps: StepItem[];
   stories: StoryItem[];
   adoption: AdoptionContent;
-  sanctuary: SanctuaryContent;
-  community: CommunityContent;
-  testimonials: Testimonial[];
-  securityBadges: SecurityBadge[];
-  mediaRibbon: MediaFeature[];
-  founder: FounderStoryContent;
-  certificates: CertificateItem[];
-  donorWall: DonorEntry[];
-  globalStats: GlobalStat[];
-  partners: PartnerLogo[];
-  emergency: EmergencyCampaign;
-  givingCalculator: {
-    defaultAmount: number;
-    note: string;
-    steps: GivingCalculatorStep[];
-  };
-  impact24h: ImpactSummary;
-  reels: RescueReel[];
   bento: BentoItem[];
   faq: FAQItem[];
   final: {
@@ -408,18 +241,13 @@ export type LandingContent = {
 
 const CTA_PRIMARY = "https://www.paypal.com/donate";
 const CTA_REPORT = "https://example.com/angels-haven-transparency.pdf";
-const CTA_COMMUNITY = "https://www.facebook.com/groups/480707493946285";
+const CTA_COMMUNITY = "https://www.facebook.com";
 
 const RAIL_SECTIONS = [
   { id: "hero", label: "Intro" },
   { id: "how", label: "Flow" },
   { id: "stories", label: "Stories" },
-  { id: "sanctuary", label: "Sanctuary" },
-  { id: "community", label: "Community" },
-  { id: "founder", label: "Founder" },
   { id: "impact", label: "Impact" },
-  { id: "certifications", label: "Proof" },
-  { id: "partners", label: "Partners" },
   { id: "trust", label: "Trust" },
 ] as const;
 
@@ -650,23 +478,8 @@ function Navigation({ content, solid }: { content: LandingContent; solid: boolea
           <a href="#stories" className="transition hover:text-white">
             Rescue stories
           </a>
-          <a href="#sanctuary" className="transition hover:text-white">
-            Sanctuary
-          </a>
-          <a href="#founder" className="transition hover:text-white">
-            Founder
-          </a>
-          <a href="#community" className="transition hover:text-white">
-            Community
-          </a>
           <a href="#impact" className="transition hover:text-white">
             Impact
-          </a>
-          <a href="#certifications" className="transition hover:text-white">
-            Proof
-          </a>
-          <a href="#partners" className="transition hover:text-white">
-            Partners
           </a>
           <a href="#trust" className="transition hover:text-white">
             Trust
@@ -752,23 +565,9 @@ function HeroMedia({ media, active, prefersReducedMotion }: { media: MediaAsset;
   const shouldPlay = active && !prefersReducedMotion && Boolean(media.video) && canPlayVideo;
   return (
     <div className="absolute inset-0 overflow-hidden">
-      <Image
-        src={media.poster}
-        alt={media.alt}
-        fill
-        priority
-        className={`object-cover object-[center_32%] transition-opacity duration-700 ${shouldPlay ? "opacity-0" : "opacity-100"}`}
-      />
+      <Image src={media.poster} alt={media.alt} fill priority className={`object-cover transition-opacity duration-700 ${shouldPlay ? "opacity-0" : "opacity-100"}`} />
       {shouldPlay && media.video && (
-        <video
-          className="absolute inset-0 h-full w-full object-cover object-[center_32%]"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          poster={media.poster}
-        >
+        <video className="absolute inset-0 h-full w-full object-cover" autoPlay muted loop playsInline preload="auto" poster={media.poster}>
           <source src={media.video} type="video/mp4" />
         </video>
       )}
@@ -832,7 +631,7 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent; pref
     return () => ctx.revert();
   }, [prefersReducedMotion]);
 
-  const { hero, securityBadges } = content;
+  const { hero } = content;
 
   return (
     <section
@@ -882,7 +681,6 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent; pref
             <UrgencyBanner data={hero.urgency} />
             <HeroSocialProof items={hero.socialProof} prefersReducedMotion={prefersReducedMotion} />
             <RecentDonationsTicker ticker={hero.ticker} prefersReducedMotion={prefersReducedMotion} />
-            <SecurityBadgesBar badges={securityBadges} />
           </div>
         </div>
         <motion.aside
@@ -930,322 +728,6 @@ function HeroQuickActions({ actions }: { actions: HeroQuickAction[] }) {
         ))}
       </div>
     </div>
-  );
-}
-
-function SecurityBadgesBar({ badges }: { badges: SecurityBadge[] }) {
-  if (!badges.length) return null;
-  return (
-    <div className="grid gap-3 rounded-[1.9rem] border border-white/12 bg-white/6 px-5 py-4 text-white/70 sm:grid-cols-2" aria-label="Payment and security assurances">
-      {badges.map((badge) => (
-        <div key={badge.id} className="flex items-start gap-3 text-xs uppercase tracking-[0.28em]">
-          <span className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[0.7rem] font-semibold text-white">
-            ✓
-          </span>
-          <div className="flex flex-col gap-1 text-left">
-            <span className="text-white/85">{badge.label}</span>
-            <span className="text-[0.65rem] normal-case tracking-normal text-white/60">{badge.description}</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function MediaRibbon({ items }: { items: MediaFeature[] }) {
-  if (!items.length) return null;
-  return (
-    <section className="snap-none border-t border-b border-white/10 bg-[rgba(12,16,14,0.78)] py-5 text-white/70">
-      <div className="section-shell flex flex-wrap items-center justify-center gap-6 text-[0.75rem] uppercase tracking-[0.28em]">
-        <span className="text-white/50">As seen in</span>
-        {items.map((item) => (
-          <a
-            key={item.id}
-            href={item.href}
-            className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-white/75 transition hover:border-white/35 hover:text-white"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <span className="font-semibold text-white/85">{item.outlet}</span>
-            <span className="hidden text-[0.65rem] normal-case tracking-normal text-white/60 sm:inline">{item.label}</span>
-          </a>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function GlobalStatsBand({ stats }: { stats: GlobalStat[] }) {
-  if (!stats.length) return null;
-  return (
-    <section className="snap-none bg-[#0d1612] py-10 text-white" aria-label="Live rescue statistics">
-      <div className="section-shell grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <div key={stat.id} className="glass-card flex flex-col gap-2 rounded-[1.9rem] border border-white/12 bg-white/6 p-5 text-white/85">
-            <span className="text-3xl font-semibold text-white">{stat.value}</span>
-            <span className="text-xs uppercase tracking-[0.3em] text-white/55">{stat.label}</span>
-            <p className="text-sm text-white/65">{stat.detail}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function EmergencyFundMeter({ campaign }: { campaign: EmergencyCampaign }) {
-  const percent = Math.min(100, Math.round((campaign.raised / campaign.goal) * 100));
-  return (
-    <section className="snap-none bg-[#122017] py-20 text-white" aria-live="polite">
-      <div className="section-shell grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,340px)] lg:items-center">
-        <div className="space-y-5">
-          <span className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-            Emergency flight fund
-          </span>
-          <h2 className="heading-xl">{campaign.title}</h2>
-          <p className="max-w-2xl text-sm text-white/70">{campaign.description}</p>
-          <div className="glass-card flex flex-col gap-4 rounded-[2rem] border border-white/12 bg-white/8 px-6 py-5 text-white/85">
-            <div className="flex flex-wrap items-baseline gap-4">
-              <div>
-                <span className="text-xs uppercase tracking-[0.3em] text-white/55">Raised</span>
-                <p className="text-3xl font-semibold text-white">
-                  {campaign.currency}{campaign.raised.toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs uppercase tracking-[0.3em] text-white/55">Goal</span>
-                <p className="text-lg text-white/75">
-                  {campaign.currency}{campaign.goal.toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs uppercase tracking-[0.3em] text-white/55">Dogs waiting</span>
-                <p className="text-lg text-white/75">{campaign.dogsWaiting}</p>
-              </div>
-            </div>
-            <div className="h-3 w-full rounded-full bg-white/15">
-              <div className="h-full rounded-full bg-white" style={{ width: `${percent}%` }} />
-            </div>
-            <p className="text-xs uppercase tracking-[0.3em] text-white/55">Target take-off {campaign.deadline}</p>
-            <MagneticButton href={campaign.ctaHref} onHover={() => trackEvent("cta_click_primary", { surface: "emergency" })}>
-              {campaign.ctaLabel}
-            </MagneticButton>
-          </div>
-        </div>
-        <div className="glass-card space-y-4 rounded-[2.1rem] border border-white/12 bg-white/8 p-6 text-sm text-white/70">
-          <h3 className="text-base font-semibold text-white">Tonight&apos;s flight manifest</h3>
-          <p>7 dogs cleared to fly. Each £120 block funds DEFRA crates, vet sign-off, and volunteer escort costs.</p>
-          <p>Livestream updates drop at 21:00 TRT inside the Facebook group once the meter hits 100%.</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function GivingCalculator({ config }: { config: LandingContent["givingCalculator"] }) {
-  const amountOptions = config.steps.map((step) => step.amount).sort((a, b) => a - b);
-  const minAmount = amountOptions[0] ?? 0;
-  const maxAmount = amountOptions[amountOptions.length - 1] ?? 0;
-  const [amount, setAmount] = useState(config.defaultAmount);
-  const activeStep = config.steps.find((step) => step.amount === amount) ?? config.steps[0];
-
-  const setNearestAmount = (value: number) => {
-    if (!amountOptions.length) return;
-    const nearest = amountOptions.reduce((prev, curr) => (Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev));
-    setAmount(nearest);
-  };
-
-  return (
-    <section className="snap-none bg-[#101b16] py-20 text-white">
-      <div className="section-shell grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
-        <div className="space-y-6">
-          <span className="text-xs font-semibold uppercase tracking-[0.32em] text-white/55">Monthly giving calculator</span>
-          <h3 className="heading-lg">See what your monthly support unlocks.</h3>
-          <p className="text-sm text-white/70">Move the slider to pick a monthly pledge and we’ll show the care it powers.</p>
-          <input
-            type="range"
-            min={minAmount}
-            max={maxAmount}
-            step={1}
-            value={amount}
-            onChange={(event) => setNearestAmount(Number(event.target.value))}
-            className="w-full accent-white"
-          />
-          <div className="grid gap-3 sm:grid-cols-3">
-            {config.steps.map((step) => (
-              <button
-                key={step.amount}
-                type="button"
-                className={`rounded-full border px-4 py-2 text-sm uppercase tracking-[0.28em] transition ${
-                  step.amount === amount ? "border-white bg-white text-[#0b1411]" : "border-white/20 text-white/70"
-                }`}
-                onClick={() => setAmount(step.amount)}
-              >
-                £{step.amount}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="glass-card flex flex-col gap-4 rounded-[2rem] border border-white/12 bg-white/8 p-6 text-white/80">
-          <h4 className="text-sm uppercase tracking-[0.3em] text-white/60">£{amount}/month impact</h4>
-          <p className="text-lg font-semibold text-white">{activeStep.label}</p>
-          <p className="text-sm text-white/70">{activeStep.description}</p>
-          <p className="text-xs uppercase tracking-[0.28em] text-white/50">{config.note}</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ImpactPulse({ summary }: { summary: ImpactSummary }) {
-  return (
-    <section className="snap-none border-t border-b border-white/10 bg-[rgba(12,16,14,0.78)] py-6 text-white">
-      <div className="section-shell flex flex-wrap items-center justify-between gap-4 text-sm text-white/75">
-        <div className="flex items-center gap-3">
-          <span className="inline-flex h-3 w-3 animate-pulse rounded-full bg-[#ffb88c]" aria-hidden />
-          <span className="uppercase tracking-[0.32em] text-white/55">{summary.headline}</span>
-        </div>
-        <div className="flex flex-wrap gap-6">
-          <span className="flex items-center gap-2">
-            <strong className="text-white">{summary.currency}{summary.totalRaised.toLocaleString()}</strong>
-            <span className="uppercase tracking-[0.24em] text-white/55">raised last 24h</span>
-          </span>
-          <span className="flex items-center gap-2">
-            <strong className="text-white">{summary.supporters}</strong>
-            <span className="uppercase tracking-[0.24em] text-white/55">supporters</span>
-          </span>
-          <span className="flex items-center gap-2">
-            <strong className="text-white">{summary.flightsBooked}</strong>
-            <span className="uppercase tracking-[0.24em] text-white/55">flights booked</span>
-          </span>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FounderSpotlight({ content }: { content: FounderStoryContent }) {
-  if (!content) return null;
-  return (
-    <section id="founder" className="snap-start relative overflow-hidden bg-[#101a15] text-white">
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="absolute -top-48 right-[-220px] h-[620px] w-[620px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,206,176,0.38),transparent_70%)] blur-3xl" />
-        <div className="absolute -bottom-40 left-[-200px] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle_at_center,rgba(36,148,116,0.32),transparent_68%)] blur-3xl" />
-      </div>
-      <div className="section-shell relative z-10 grid gap-12 py-28 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
-        <div className="space-y-6">
-          <span className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-            {content.eyebrow}
-          </span>
-          <h2 className="heading-xl">{content.headline}</h2>
-          <div className="space-y-4 text-base text-white/75">
-            {content.paragraphs.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {content.credentials.map((item) => (
-              <div key={item.id} className="glass-card flex h-full flex-col gap-2 rounded-[1.8rem] border border-white/12 bg-white/10 p-4 text-sm text-white/75">
-                <span className="text-xs uppercase tracking-[0.32em] text-white/60">{item.label}</span>
-                <p className="text-[0.95rem] text-white">{item.detail}</p>
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-6 text-sm text-white/70">
-            {content.stats.map((stat) => (
-              <div key={stat.id} className="flex items-baseline gap-3">
-                <span className="text-3xl font-semibold text-white">{stat.value}</span>
-                <span className="max-w-[200px] text-xs uppercase tracking-[0.28em] text-white/55">{stat.caption}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="space-y-5">
-          <div className="overflow-hidden rounded-[2.4rem] border border-white/15 bg-white/10">
-            <Image src={content.image} alt={content.headline} width={560} height={640} className="h-full w-full object-cover" />
-          </div>
-          {content.video ? (
-            <video
-              controls
-              preload="metadata"
-              poster={content.image}
-              className="h-full w-full overflow-hidden rounded-[2rem] border border-white/12 bg-white/10"
-            >
-              <source src={content.video} type="video/mp4" />
-            </video>
-          ) : null}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CertificationGallery({ items }: { items: CertificateItem[] }) {
-  if (!items.length) return null;
-  return (
-    <section id="certifications" className="snap-start bg-[#0f1813] py-28 text-white">
-      <div className="section-shell space-y-10">
-        <div className="space-y-3">
-          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/65">Compliance & governance</span>
-          <h2 className="heading-xl">Verified documentation you can download anytime.</h2>
-          <p className="max-w-3xl text-sm text-white/70">
-            Every certificate links directly to the issuing authority or downloadable PDF so major donors and partners can audit in minutes.
-          </p>
-        </div>
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {items.map((certificate) => (
-            <a
-              key={certificate.id}
-              href={certificate.href}
-              className="group flex h-full flex-col justify-between gap-4 rounded-[2.2rem] border border-white/12 bg-white/8 p-6 text-white/80 transition hover:border-white/35 hover:bg-white/12"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <div className="space-y-2">
-                <span className="text-xs uppercase tracking-[0.3em] text-white/55">{certificate.issuer}</span>
-                <h3 className="heading-sm text-white">{certificate.title}</h3>
-                <p className="text-sm text-white/70">{certificate.summary}</p>
-              </div>
-              <div className="flex items-center justify-between text-xs uppercase tracking-[0.28em] text-white/55">
-                <span>{certificate.year}</span>
-                <span className="inline-flex items-center gap-1 text-white/70">
-                  View
-                  <span aria-hidden>→</span>
-                </span>
-              </div>
-            </a>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function PartnersShowcase({ partners }: { partners: PartnerLogo[] }) {
-  if (!partners.length) return null;
-  return (
-    <section id="partners" className="snap-none bg-[#0c140f] py-20 text-white">
-      <div className="section-shell space-y-8">
-        <div className="space-y-2">
-          <span className="text-xs font-semibold uppercase tracking-[0.32em] text-white/55">Trusted partners</span>
-          <h3 className="heading-lg">Grounded by regulators, vets, and logistics pros.</h3>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {partners.map((partner) => (
-            <a
-              key={partner.id}
-              href={partner.href}
-              className="group flex h-full flex-col gap-2 rounded-[1.9rem] border border-white/12 bg-white/6 p-4 text-sm text-white/75 transition hover:border-white/35 hover:bg-white/12 hover:text-white"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span className="text-base font-semibold text-white">{partner.name}</span>
-              <span className="text-[0.75rem] text-white/60">{partner.description}</span>
-              <span className="mt-auto text-[0.65rem] uppercase tracking-[0.3em] text-white/45">View →</span>
-            </a>
-          ))}
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -1433,13 +915,8 @@ function UrgencyBanner({ data }: { data: HeroContent["urgency"] }) {
 
 function TrustSection({ content, prefersReducedMotion }: { content: TrustContent; prefersReducedMotion: boolean }) {
   return (
-    <section id="trust" className="snap-none relative overflow-hidden bg-[#f2eee8] py-28 text-[#101815]">
-      <div className="pointer-events-none absolute inset-0 opacity-80" aria-hidden>
-        <div className="absolute -left-16 top-0 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,199,164,0.45),transparent_65%)] blur-3xl" />
-        <div className="absolute -right-24 bottom-[-140px] h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,170,151,0.32),transparent_68%)] blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_95%,rgba(198,235,221,0.28),transparent_70%)]" />
-      </div>
-      <div className="section-shell relative z-10 space-y-16">
+    <section id="trust" className="snap-none bg-[#f2eee8] py-28 text-[#101815]">
+      <div className="section-shell space-y-16">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           <div className="space-y-4">
             <span className="text-xs font-semibold uppercase tracking-[0.32em] text-[#61726c]">Due diligence</span>
@@ -1681,7 +1158,6 @@ function SmartVideo({ media, prefersReducedMotion, onPlay }: { media: MediaAsset
           muted
           loop
           playsInline
-          preload="none"
           poster={media.poster}
         >
           <source src={media.video} type="video/mp4" />
@@ -1940,297 +1416,6 @@ function AdoptionShowcase({
   );
 }
 
-function SanctuarySpotlight({
-  content,
-  prefersReducedMotion,
-}: {
-  content: LandingContent["sanctuary"];
-  prefersReducedMotion: boolean;
-}) {
-  return (
-    <section
-      id="sanctuary"
-      className="snap-start relative overflow-hidden bg-[#122017] text-white"
-    >
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="absolute -top-32 left-[-160px] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,196,159,0.42),transparent_68%)] blur-3xl" />
-        <div className="absolute -bottom-48 right-[-200px] h-[620px] w-[620px] rounded-full bg-[radial-gradient(circle_at_center,rgba(39,150,117,0.35),transparent_70%)] blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_42%_88%,rgba(255,178,141,0.22),transparent_72%)] opacity-80" />
-      </div>
-      <div className="section-shell relative z-10 grid gap-12 py-28 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
-        <div className="space-y-7">
-          <span className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-            {content.eyebrow}
-          </span>
-          <h2 className="heading-xl text-white">{content.headline}</h2>
-          <p className="max-w-2xl text-base text-white/75">{content.body}</p>
-          <p className="text-sm uppercase tracking-[0.32em] text-white/50">{content.highlight}</p>
-          <div className="grid gap-4 pt-2 md:grid-cols-2">
-            {content.pillars.map((pillar, index) => (
-              <motion.article
-                key={pillar.id}
-                className="glass-card flex h-full flex-col gap-3 rounded-[2rem] border border-white/12 bg-white/10 p-5 text-white"
-                initial={prefersReducedMotion ? false : { opacity: 0, y: 28 }}
-                whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.35 }}
-                transition={{ duration: 0.5, ease: "easeOut", delay: prefersReducedMotion ? 0 : index * 0.06 }}
-              >
-                <span className="text-xs uppercase tracking-[0.28em] text-white/60">{pillar.title}</span>
-                <p className="text-sm text-white/70">{pillar.copy}</p>
-              </motion.article>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-4 pt-4">
-            <MagneticButton
-              href={content.cta.primaryHref}
-              onHover={() => trackEvent("cta_click_primary", { surface: "sanctuary-primary" })}
-            >
-              {content.cta.primaryLabel}
-            </MagneticButton>
-            <button
-              type="button"
-              className="cta-muted inline-flex items-center gap-2 text-xs uppercase tracking-[0.32em] text-white/80"
-              onClick={() => {
-                trackEvent("cta_click_primary", { surface: "sanctuary-secondary" });
-                window.open(content.cta.secondaryHref, "_blank");
-              }}
-            >
-              {content.cta.secondaryLabel}
-            </button>
-            <span className="text-xs uppercase tracking-[0.28em] text-white/45">{content.cta.note}</span>
-          </div>
-          <div className="flex flex-wrap gap-6 pt-5 text-sm text-white/70">
-            {content.stats.map((stat) => (
-              <div key={stat.id} className="flex items-baseline gap-3">
-                <span className="text-3xl font-semibold text-white">{stat.value}</span>
-                <span className="max-w-[160px] text-xs uppercase tracking-[0.28em] text-white/55">{stat.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-[2.8rem] border border-white/15 bg-white/10 p-6 text-white/80 backdrop-blur">
-          <div className="relative overflow-hidden rounded-[2.2rem] border border-white/12 bg-white/10">
-            <Image
-              src={content.image}
-              alt={`${content.quote.name} walking rescue dogs at the sanctuary`}
-              width={520}
-              height={640}
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-transparent" />
-          </div>
-          <blockquote className="mt-6 space-y-3 text-sm text-white/75">
-            <p>“{content.quote.text}”</p>
-            <footer className="text-xs uppercase tracking-[0.3em] text-white/55">
-              {content.quote.name} • {content.quote.role}
-            </footer>
-          </blockquote>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CommunitySection({
-  content,
-  testimonials,
-  donorWall,
-  prefersReducedMotion,
-}: {
-  content: LandingContent["community"];
-  testimonials: LandingContent["testimonials"];
-  donorWall: DonorEntry[];
-  prefersReducedMotion: boolean;
-}) {
-  return (
-    <section id="community" className="snap-start relative overflow-hidden bg-[#0d1914] text-white">
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="absolute -top-40 right-[-200px] h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle_at_center,rgba(42,160,128,0.32),transparent_70%)] blur-3xl" />
-        <div className="absolute -bottom-56 left-[-220px] h-[640px] w-[640px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,188,146,0.32),transparent_70%)] blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_88%,rgba(233,209,186,0.18),transparent_72%)] opacity-80" />
-      </div>
-      <div className="section-shell relative z-10 space-y-16 py-28">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,360px)] lg:items-start">
-          <div className="space-y-7">
-            <span className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-              {content.eyebrow}
-            </span>
-            <h2 className="heading-xl text-white">{content.headline}</h2>
-            <p className="max-w-3xl text-base text-white/75">{content.description}</p>
-            <a
-              href={content.fb.href}
-              className="glass-card inline-flex items-center gap-3 rounded-[2rem] border border-white/15 bg-white/10 px-5 py-4 text-sm text-white/80 transition hover:border-white/30 hover:text-white"
-              onClick={() => trackEvent("community_click_fb", { surface: "community-card" })}
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white text-xs font-semibold uppercase tracking-[0.24em]">
-                FB
-              </span>
-              <span className="flex flex-col">
-                <span className="text-sm font-semibold text-white">{content.fb.label}</span>
-                <span className="text-xs uppercase tracking-[0.3em] text-white/60">{content.fb.members}</span>
-              </span>
-              <span className="ml-auto text-xs uppercase tracking-[0.24em] text-white/45">→</span>
-            </a>
-          </div>
-          <div className="glass-card flex flex-col gap-4 rounded-[2.6rem] border border-white/15 bg-white/10 p-6 text-white/80">
-            <div className="space-y-2">
-              <h3 className="heading-sm text-white">{content.fb.label}</h3>
-              <p className="text-sm text-white/70">{content.fb.proof}</p>
-            </div>
-            <MagneticButton
-              href={content.cta.href}
-              onHover={() => trackEvent("cta_click_primary", { surface: "community-primary" })}
-            >
-              {content.cta.label}
-            </MagneticButton>
-            <button
-              type="button"
-              className="cta-muted inline-flex items-center gap-2 text-xs uppercase tracking-[0.32em] text-white/80"
-              onClick={() => {
-                trackEvent("cta_click_primary", { surface: "community-secondary" });
-                window.open(content.cta.secondaryHref, "_blank");
-              }}
-            >
-              {content.cta.secondaryLabel}
-            </button>
-          </div>
-        </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {content.highlights.map((item, index) => (
-            <motion.article
-              key={item.id}
-              className="glass-card flex h-full flex-col gap-3 rounded-[2.1rem] border border-white/12 bg-white/8 p-6 text-white"
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 30 }}
-              whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.35 }}
-              transition={{ duration: 0.5, ease: "easeOut", delay: prefersReducedMotion ? 0 : index * 0.05 }}
-            >
-              <span className="text-xs uppercase tracking-[0.3em] text-white/60">{item.title}</span>
-              <p className="text-sm text-white/75">{item.copy}</p>
-            </motion.article>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-12 text-sm text-white/70">
-          {content.stats.map((stat) => (
-            <div key={stat.id} className="flex items-baseline gap-3">
-              <span className="text-4xl font-semibold text-white">{stat.value}</span>
-              <span className="max-w-[220px] text-xs uppercase tracking-[0.3em] text-white/55">{stat.label}</span>
-            </div>
-          ))}
-        </div>
-        <div className="space-y-10">
-          <div className="flex items-center justify-between gap-6">
-            <h3 className="heading-md text-white">Community voices</h3>
-            <span className="text-xs uppercase tracking-[0.28em] text-white/55">
-              Verified donor & adopter testimonials
-            </span>
-          </div>
-          <DonorWall entries={donorWall} />
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {testimonials.map((testimonial, index) => (
-              <motion.blockquote
-                key={testimonial.id}
-                className="glass-card flex h-full flex-col justify-between rounded-[2.2rem] border border-white/12 bg-white/8 p-6 text-white/80"
-                initial={prefersReducedMotion ? false : { opacity: 0, y: 30 }}
-                whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.35 }}
-                transition={{ duration: 0.5, ease: "easeOut", delay: prefersReducedMotion ? 0 : index * 0.05 }}
-              >
-                <div className="flex items-center gap-2 text-[#ffb88c]">
-                  {Array.from({ length: 5 }).map((_, starIndex) => (
-                    <span
-                      key={starIndex}
-                      className={`text-base ${starIndex < testimonial.rating ? "opacity-100" : "opacity-30"}`}
-                      aria-hidden="true"
-                    >
-                      ★
-                    </span>
-                  ))}
-                  <span className="text-xs uppercase tracking-[0.28em] text-white/60">{testimonial.rating.toFixed(1)}/5</span>
-                </div>
-                {testimonial.media ? (
-                  <div className="mt-4">
-                    <SmartVideo
-                      media={testimonial.media}
-                      prefersReducedMotion={prefersReducedMotion}
-                      onPlay={() => trackEvent("testimonial_video_play", { id: testimonial.id })}
-                    />
-                  </div>
-                ) : null}
-                <p className="mt-4 text-sm text-white/80">“{testimonial.quote}”</p>
-                <footer className="mt-6 text-xs uppercase tracking-[0.3em] text-white/55">
-                  {testimonial.name} • {testimonial.role}
-                </footer>
-              </motion.blockquote>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function DonorWall({ entries }: { entries: DonorEntry[] }) {
-  if (!entries.length) return null;
-  return (
-    <div className="grid gap-3 rounded-[2.2rem] border border-white/12 bg-white/6 p-6 text-white/80">
-      <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/55">
-        <span>Major donor wall</span>
-        <span className="text-white/45">Thank you for keeping flights funded</span>
-      </div>
-      <div className="grid gap-3 md:grid-cols-2">
-        {entries.map((entry) => (
-          <div key={entry.id} className="flex items-center justify-between gap-3 rounded-[1.6rem] border border-white/10 bg-white/8 px-4 py-3">
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-white">{entry.name}</span>
-              <span className="text-xs uppercase tracking-[0.26em] text-white/55">
-                {entry.city} • {entry.recurring ? "Recurring" : "One-off"}
-              </span>
-            </div>
-            <div className="text-right">
-              <span className="text-base font-semibold text-white">£{entry.amount}</span>
-              <p className="text-[0.65rem] text-white/55">Since {entry.since}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function RescueReels({ reels, prefersReducedMotion }: { reels: RescueReel[]; prefersReducedMotion: boolean }) {
-  if (!reels.length) return null;
-  return (
-    <section id="reels" className="snap-start bg-[#0e1a16] py-24 text-white">
-      <div className="section-shell space-y-10">
-        <div className="space-y-3">
-          <span className="text-xs font-semibold uppercase tracking-[0.32em] text-white/60">Rescue reel series</span>
-          <h2 className="heading-xl">Watch recoveries from sanctuary morning to sofa night.</h2>
-          <p className="max-w-3xl text-sm text-white/70">Short-form clips kept fresh daily by the sanctuary team and adopters so supporters can audit impact in real time.</p>
-        </div>
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {reels.map((reel, index) => (
-            <motion.article
-              key={reel.id}
-              className="glass-card flex h-full flex-col gap-4 rounded-[2.1rem] border border-white/12 bg-white/8 p-6 text-white"
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 28 }}
-              whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.35 }}
-              transition={{ duration: 0.5, ease: "easeOut", delay: prefersReducedMotion ? 0 : index * 0.08 }}
-            >
-              <SmartVideo media={reel.media} prefersReducedMotion={prefersReducedMotion} onPlay={() => trackEvent("rescue_reel_play", { id: reel.id })} />
-              <div className="space-y-2">
-                <h3 className="heading-sm text-white">{reel.title}</h3>
-                <p className="text-sm text-white/70">{reel.description}</p>
-              </div>
-            </motion.article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function Bento({ content }: { content: LandingContent }) {
   return (
     <section id="impact" className="snap-start flex min-h-[100dvh] items-center bg-[#101b16]">
@@ -2272,13 +1457,8 @@ function Bento({ content }: { content: LandingContent }) {
 function FAQSection({ content }: { content: LandingContent }) {
   const [open, setOpen] = useState<string | null>(content.faq[0]?.question ?? null);
   return (
-    <section id="faq" className="snap-none relative overflow-hidden bg-[#f6f4f0] py-28 text-[#101815]">
-      <div className="pointer-events-none absolute inset-0 opacity-90" aria-hidden>
-        <div className="absolute -top-24 right-[-120px] h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle_at_center,rgba(255,198,170,0.4),transparent_65%)] blur-3xl" />
-        <div className="absolute left-[-160px] bottom-[-140px] h-[460px] w-[460px] rounded-full bg-[radial-gradient(circle_at_center,rgba(209,232,221,0.42),transparent_68%)] blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(255,210,190,0.18),transparent_70%)]" />
-      </div>
-      <div className="section-shell relative z-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_420px]">
+    <section id="faq" className="snap-none bg-[#f6f4f0] py-28 text-[#101815]">
+      <div className="section-shell grid gap-12 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-5">
           <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[#4f5d58]">FAQ</span>
           <h2 className="heading-xl text-[#101815]">Everything you need before you hit donate.</h2>
@@ -2375,23 +1555,14 @@ function StickyDonateDock({ label, href }: { label: string; href: string }) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 56 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="fixed bottom-6 left-1/2 z-[95] w-full max-w-[min(640px,calc(100%-2.5rem))] -translate-x-1/2 overflow-hidden rounded-[2.2rem] border border-white/10 bg-[rgba(11,15,13,0.94)] shadow-[0_30px_80px_rgba(6,10,9,0.65)] backdrop-blur lg:hidden"
+          className="fixed bottom-6 left-1/2 z-[95] w-full max-w-[min(560px,calc(100%-2.5rem))] -translate-x-1/2 overflow-hidden rounded-full border border-white/10 bg-[rgba(11,15,13,0.9)] shadow-[0_30px_80px_rgba(6,10,9,0.65)] backdrop-blur lg:hidden"
         >
-          <div className="flex flex-col gap-4 px-6 py-5 text-white">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex flex-col">
-                <span className="text-xs uppercase tracking-[0.3em] text-white/55">Keep the corridor open</span>
-                <span className="text-lg font-semibold">{label}</span>
-              </div>
-              <MagneticButton
-                href={href}
-                className="px-6 py-3 text-xs uppercase tracking-[0.32em]"
-                onHover={() => trackEvent("cta_click_primary", { surface: "mobile-dock" })}
-              >
-                Donate now
-              </MagneticButton>
+          <div className="flex items-center justify-between gap-4 px-5 py-4 text-white">
+            <div className="flex flex-col">
+              <span className="text-xs uppercase tracking-[0.3em] text-white/55">Donate</span>
+              <span className="text-sm font-semibold">{label}</span>
             </div>
-            <p className="text-xs text-white/60">Tap to give in under 20 seconds — Apple Pay, Google Pay, and PayPal supported.</p>
+            <MagneticButton href={href}>{label}</MagneticButton>
           </div>
           <div className="h-1 w-full bg-white/10">
             <div className="h-full bg-white" style={{ width: `${Math.round(progress * 100)}%` }} />
@@ -2423,13 +1594,6 @@ function QuickActionIcon({ icon }: { icon: HeroQuickAction["icon"] }) {
         <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
           <path d="M12 21c4.6-4.6 7-8.3 7-11.3A7 7 0 0 0 5 9.7C5 12.7 7.4 16.4 12 21Z" strokeLinecap="round" strokeLinejoin="round" />
           <circle cx="12" cy="9.7" r="2.3" />
-        </svg>
-      );
-    case "community":
-      return (
-        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
-          <path d="M12 21c-4.4-3-7.5-5.9-7.5-9.4a4.5 4.5 0 0 1 7.5-3.4 4.5 4.5 0 0 1 7.5 3.4c0 3.5-3.1 6.4-7.5 9.4Z" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M9 11a3 3 0 0 0 6 0" strokeLinecap="round" />
         </svg>
       );
     case "donate":
@@ -2560,27 +1724,11 @@ export function Landing({ content }: { content: LandingContent }) {
       <Navigation content={content} solid={navSolid} />
       <RailIndicators />
       <Hero content={content} prefersReducedMotion={prefersReducedMotion} />
-      <MediaRibbon items={content.mediaRibbon} />
-      <ImpactPulse summary={content.impact24h} />
-      <GlobalStatsBand stats={content.globalStats} />
-      <EmergencyFundMeter campaign={content.emergency} />
       <USPStrip items={content.usp} />
       <HowItWorks content={content} prefersReducedMotion={prefersReducedMotion} />
-      <GivingCalculator config={content.givingCalculator} />
       <Stories content={content} prefersReducedMotion={prefersReducedMotion} />
-      <RescueReels reels={content.reels} prefersReducedMotion={prefersReducedMotion} />
       <AdoptionShowcase content={content.adoption} prefersReducedMotion={prefersReducedMotion} />
-      <SanctuarySpotlight content={content.sanctuary} prefersReducedMotion={prefersReducedMotion} />
-      <FounderSpotlight content={content.founder} />
-      <CommunitySection
-        content={content.community}
-        testimonials={content.testimonials}
-        donorWall={content.donorWall}
-        prefersReducedMotion={prefersReducedMotion}
-      />
       <Bento content={content} />
-      <CertificationGallery items={content.certificates} />
-      <PartnersShowcase partners={content.partners} />
       <TrustSection content={content.trust} prefersReducedMotion={prefersReducedMotion} />
       <FAQSection content={content} />
       <FinalCTA content={content} />
@@ -2602,7 +1750,7 @@ const EN_CONTENT: LandingContent = {
     eyebrow: "Angels Haven • Adopt ↔ Sponsor",
     headline: "Adopt. Sponsor. Keep rescue dogs safe tonight.",
     subheadline: "Choose a companion ready to fly from Turkey or keep our rescue corridor funded with a micro-sponsor.",
-    summary: "Charity Commission #1204821 • DEFRA travel compliant • Weekly impact livestreams",
+    summary: "Transparent timelines • DEFRA travel compliant • Weekly impact livestreams",
     ctaLabel: "Meet the adoption pack",
     ctaHref: "#adopt",
     donateHref: CTA_PRIMARY,
@@ -2635,13 +1783,6 @@ const EN_CONTENT: LandingContent = {
         href: "mailto:hello@angelshaven.org?subject=Sanctuary%20visit",
         icon: "visit",
       },
-      {
-        id: "join-group",
-        label: "Join the rescue group",
-        caption: "14.6k neighbours share nightly updates",
-        href: CTA_COMMUNITY,
-        icon: "community",
-      },
     ],
     media: {
       poster: "/images/hero-poster.avif",
@@ -2667,8 +1808,8 @@ const EN_CONTENT: LandingContent = {
           alt: "Families greeting new rescue dogs",
         },
       },
-      { id: "group", metric: "👥 14.6k neighbours", caption: "Active in our Facebook rescue hub" },
-      { id: "charity", metric: "Charity #1204821", caption: "UK Charity Commission verified" },
+      { id: "members", metric: "💙 2,847 monthly", caption: "Sponsors on autopilot" },
+      { id: "rating", metric: "⭐ 4.9/5", caption: "Transparency rating" },
     ],
     urgency: {
       remainingLabel: "Dogs cleared to fly",
@@ -2738,7 +1879,7 @@ const EN_CONTENT: LandingContent = {
       copy: "Found trembling in Fethiye. Micro-donations funded food, vaccinations, and a flight to her London foster.",
       stat: "Day 14 • Foster placement confirmed",
       media: {
-        before: { poster: "/images/hero-rescue.png", alt: "Mila before rescue" },
+        before: { poster: "/images/story-before.png", alt: "Mila before rescue" },
         after: { poster: "/images/story-mila.avif", alt: "Mila resting after rescue" },
         clip: { poster: "/images/story-mila.avif", video: "/videos/story-mila.mp4", alt: "Mila video clip" },
       },
@@ -2751,7 +1892,7 @@ const EN_CONTENT: LandingContent = {
       copy: "Hit by traffic near Antalya. The community covered surgery, rehab, and relocation—he now runs Brighton trails.",
       stat: "Day 28 • Cleared for adoption",
       media: {
-        before: { poster: "/images/hero-rescue.png", alt: "Duman before treatment" },
+        before: { poster: "/images/story-before.png", alt: "Duman before treatment" },
         after: { poster: "/images/story-duman.avif", alt: "Duman running happily" },
         clip: { poster: "/images/story-duman.avif", video: "/videos/story-duman.mp4", alt: "Duman video clip" },
       },
@@ -2832,276 +1973,6 @@ const EN_CONTENT: LandingContent = {
       donateHref: CTA_PRIMARY,
     },
   },
-  sanctuary: {
-    eyebrow: "Tülay’s Sanctuary • İzmir countryside",
-    headline: "Healing, trust, and wagging tails before every European flight.",
-    body: "Founder Tülay and our local volunteers turn a four-acre farm into a recovery village—medicating street rescues, rebuilding muscle tone, and filming updates for future families.",
-    highlight: "Sunrise check-ins, bone broth dinners, and WhatsApp videos keep adopters looped in from day one.",
-    image: "/images/founder-tulay.png",
-    quote: {
-      text: "Watching them sprint again is the proof that every £1 you send lands in a heartbeat, not a spreadsheet.",
-      name: "Tülay Arslan",
-      role: "Founder & sanctuary lead",
-    },
-    pillars: [
-      {
-        id: "triage",
-        title: "Sunrise triage",
-        copy: "Wounds cleaned, meds given, and each dog logged for the vet’s midday round before the sun warms the paddocks.",
-      },
-      {
-        id: "social",
-        title: "Family socialising",
-        copy: "Neighbours and school volunteers spend hours on the grass so nervous pups relearn people as safety.",
-      },
-      {
-        id: "travel",
-        title: "Flight prep",
-        copy: "DEFRA paperwork, crate conditioning, and calm airport rehearsals mean travel days feel familiar.",
-      },
-      {
-        id: "updates",
-        title: "Daily updates",
-        copy: "Short clips and milestones drop into adopter and sponsor chats every evening straight from the farm.",
-      },
-    ],
-    stats: [
-      { id: "rehab", value: "36", label: "Dogs in rehab beds this month" },
-      { id: "escorts", value: "12", label: "Volunteer escorts booked for EU journeys" },
-      { id: "acres", value: "4", label: "Acre woodland paddocks for recovery" },
-    ],
-    cta: {
-      primaryLabel: "Sponsor a rehab stay",
-      primaryHref: CTA_PRIMARY,
-      secondaryLabel: "Send supplies to Tülay",
-      secondaryHref: "mailto:hello@angelshaven.org?subject=Supplies%20for%20T%C3%BClay",
-      note: "100% of sanctuary gifts fuel feed, meds, and travel prep.",
-    },
-  },
-  community: {
-    eyebrow: "Community • Transparency",
-    headline: "14,682 neighbours keep Angels Haven accountable every night.",
-    description: "The private Facebook group is our mission control—livestreams from Tülay’s farm, vet invoices, flight rosters, and donor Q&As before they hit the newsletter.",
-    fb: {
-      members: "14,682 members • 32 posts/day",
-      href: CTA_COMMUNITY,
-      label: "Join Angels Haven Rescue Updates",
-      proof: "Admins verify every adopter, donor, and volunteer. Weekly pinned posts include download links to ledgers, vet receipts, and escort rosters.",
-    },
-    highlights: [
-      {
-        id: "livestreams",
-        title: "Nightly livestream checkpoints",
-        copy: "Tülay goes live from İzmir at 21:00 TRT with kennel walk-throughs, medication logs, and meal prep updates.",
-      },
-      {
-        id: "escorts",
-        title: "Volunteer escort hub",
-        copy: "Templates, packing lists, and live airport chats help new escorts accompany dogs on London, Berlin, and Amsterdam flights.",
-      },
-      {
-        id: "ledger",
-        title: "Open finance threads",
-        copy: "Stripe and PayPal exports are posted on the first of every month with line-by-line vet, feed, and transport spend.",
-      },
-      {
-        id: "alerts",
-        title: "Rapid response alerts",
-        copy: "Critical rescues trigger @everyone tags—funding goals close in under 90 minutes thanks to the group.",
-      },
-    ],
-    stats: [
-      { id: "escorts", value: "312", label: "Flights escorted by community volunteers" },
-      { id: "donors", value: "18,247", label: "Recurring donors tracked across Stripe & PayPal" },
-      { id: "support", value: "96%", label: "Support tickets resolved within 24 hours" },
-      { id: "streams", value: "365", label: "Livestreams broadcast over the last 12 months" },
-    ],
-    cta: {
-      label: "Join the Facebook group",
-      href: CTA_COMMUNITY,
-      secondaryLabel: "Download the latest impact report",
-      secondaryHref: CTA_REPORT,
-    },
-  },
-  testimonials: [
-    {
-      id: "amelia",
-      quote: "I escort flights twice a year—supporters watched our Heathrow touchdown live and had already covered the follow-up vet visit.",
-      name: "Amelia R., London",
-      role: "Monthly donor & foster",
-      rating: 5,
-      media: {
-        poster: "/images/story-mila.avif",
-        video: "/videos/story-mila.mp4",
-        alt: "Amelia describing escorting flights",
-      },
-    },
-    {
-      id: "umit",
-      quote: "Every receipt is uploaded in the Facebook group within hours. Seeing the ledger made me upgrade to an annual sponsor.",
-      name: "Ümit K., İzmir",
-      role: "Sanctuary volunteer",
-      rating: 4.9,
-      media: {
-        poster: "/images/story-duman.avif",
-        video: "/videos/story-duman.mp4",
-        alt: "Ümit sharing sanctuary updates",
-      },
-    },
-    {
-      id: "niamh",
-      quote: "We trusted Angels Haven with corporate CSR funds because their governance pack and live Q&As leave nothing hidden.",
-      name: "Niamh F., Edinburgh",
-      role: "CSR programme lead",
-      rating: 4.8,
-      media: {
-        poster: "/images/step-impact.avif",
-        video: "/videos/step-impact.mp4",
-        alt: "Niamh explaining CSR partnership",
-      },
-    },
-  ],
-  securityBadges: [
-    { id: "ssl", label: "TLS 1.3", description: "256-bit encryption via Cloudflare & Next.js edge" },
-    { id: "pci", label: "PCI DSS", description: "Stripe + PayPal Level 1 gateways" },
-    { id: "gdpr", label: "GDPR Ready", description: "EU data residency & consent-based tracking" },
-    { id: "trust", label: "Transparency Panel", description: "Live ledgers published weekly in Facebook group" },
-  ],
-  mediaRibbon: [
-    { id: "guardian-feature", label: "Micro-donations funding flights", outlet: "The Guardian", href: "https://www.theguardian.com/uk" },
-    { id: "bbc-late", label: "Night missions across Istanbul", outlet: "BBC Radio London", href: "https://www.bbc.co.uk/sounds" },
-    { id: "wired-panel", label: "Transparency dashboards rebuild trust", outlet: "WIRED Impact", href: "https://www.wired.co.uk" },
-  ],
-  founder: {
-    eyebrow: "Meet Tülay",
-    headline: "The aviation logistician turning a Turkish farm into a lifeline",
-    paragraphs: [
-      "Tülay Arslan left a decade-long airline logistics career to formalise rescue corridors between coastal Turkey and safe homes across the UK and EU.",
-      "She documents every meal, vet procedure, and export clearance in nightly livestreams so donors never wonder where a pound went.",
-    ],
-    credentials: [
-      { id: "defra", label: "DEFRA Certified", detail: "Pet travel specialist since 2016" },
-      { id: "flight", label: "435 Flights", detail: "Coordinated for rescue escorts" },
-      { id: "ops", label: "Ops Playbooks", detail: "24-step emergency care protocol" },
-      { id: "languages", label: "Bilingual", detail: "Bridging UK donor + TR field teams" },
-    ],
-    stats: [
-      { id: "dogs", value: "182", caption: "Dogs rehomed since 2021" },
-      { id: "livestreams", value: "365", caption: "Livestreams broadcast in the last year" },
-      { id: "volunteers", value: "94", caption: "Active sanctuary & escort volunteers" },
-    ],
-    image: "/images/founder-tulay.png",
-    video: "/videos/hero-pack.mp4",
-  },
-  certificates: [
-    {
-      id: "charity-commission",
-      title: "Charity Commission Registration",
-      issuer: "Charity Commission for England & Wales",
-      year: "2024",
-      summary: "Official registration entry confirming compliance with UK charity law.",
-      href: "https://register-of-charities.charitycommission.gov.uk/charity-details/?regid=1204821",
-    },
-    {
-      id: "hackney-cvs",
-      title: "Hackney CVS Membership",
-      issuer: "Hackney Council for Voluntary Service",
-      year: "2024",
-      summary: "Validated membership in the borough’s safeguarding and governance network.",
-      href: "https://hcvs.org.uk",
-    },
-    {
-      id: "defra-license",
-      title: "DEFRA Animal Transport License",
-      issuer: "Department for Environment, Food & Rural Affairs",
-      year: "2025",
-      summary: "Transportation authorisation for cross-border pet relocation under DEFRA TRACES.",
-      href: CTA_REPORT,
-    },
-    {
-      id: "audit-letter",
-      title: "Paws & Claws LLP FY23 Audit",
-      issuer: "Paws & Claws LLP",
-      year: "2024",
-      summary: "Independent assurance covering income, reserves, and emergency disbursements.",
-      href: CTA_REPORT,
-    },
-    {
-      id: "insurance",
-      title: "Global Rescue Insurance Cover",
-      issuer: "Global Rescue Underwriters",
-      year: "2025",
-      summary: "Policy covering volunteer escorts, sanctuary operations, and cargo liability.",
-      href: CTA_REPORT,
-    },
-  ],
-  donorWall: [
-    { id: "amelia-donor", name: "Amelia R.", amount: 250, city: "London, UK", recurring: true, since: "2021" },
-    { id: "umit-donor", name: "Ümit K.", amount: 140, city: "Izmir, TR", recurring: true, since: "2022" },
-    { id: "morgan", name: "Morgan L.", amount: 500, city: "Manchester, UK", recurring: false, since: "2024" },
-    { id: "melis", name: "Melis D.", amount: 75, city: "Istanbul, TR", recurring: true, since: "2023" },
-  ],
-  globalStats: [
-    { id: "meals", label: "Meals served", value: "72k", detail: "Tracked across Fethiye, Dalyan, İzmir since launch" },
-    { id: "med", label: "Medical cases", value: "418", detail: "Emergency surgeries funded within 6 hours" },
-    { id: "escorts", label: "Volunteer escorts", value: "312", detail: "Flights accompanied by trained community members" },
-    { id: "recurring", label: "Recurring donors", value: "18,247", detail: "Stripe + PayPal autopay families keeping the corridor alive" },
-  ],
-  partners: [
-    { id: "defra", name: "DEFRA", href: "https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs", description: "Pet travel compliance partner" },
-    { id: "paws-claws", name: "Paws & Claws LLP", href: "https://example.com/paws-and-claws", description: "Independent auditors" },
-    { id: "global-rescue", name: "Global Rescue Underwriters", href: "https://example.com/global-rescue", description: "Transport insurance" },
-    { id: "hackney-cvs", name: "Hackney CVS", href: "https://hcvs.org.uk", description: "Safeguarding network" },
-    { id: "vet-network", name: "TR Vet Network", href: "https://example.com/tr-vet", description: "18-clinic medical collective" },
-  ],
-  emergency: {
-    title: "7 dogs are flight-ready but the charter balance is short",
-    description: "Every £120 block fuels DEFRA travel crates, final vet checks, and volunteer escorts. Once we hit 100%, the Heathrow corridor re-opens on Sunday night.",
-    goal: 8400,
-    raised: 6240,
-    currency: "£",
-    dogsWaiting: 7,
-    deadline: "Sunday 19:00 GMT",
-    ctaLabel: "Fund the last mile",
-    ctaHref: CTA_PRIMARY,
-  },
-  givingCalculator: {
-    defaultAmount: 25,
-    note: "Recurring donors get live receipts, crate manifests, and private livestream alerts.",
-    steps: [
-      { amount: 8, label: "Meals & meds", description: "Covers 30 bowls of high-calorie feed and antibiotics each month." },
-      { amount: 25, label: "Flight share", description: "Sponsors one-third of a DEFRA crate and export paperwork for a dog." },
-      { amount: 50, label: "Rescue corridor", description: "Keeps the night ambulance on call for emergency pickups." },
-      { amount: 100, label: "Full transport", description: "Funds a complete sanctuary-to-Heathrow journey including escort costs." },
-    ],
-  },
-  impact24h: {
-    headline: "Impact in the last 24 hours",
-    totalRaised: 2470,
-    currency: "£",
-    supporters: 186,
-    flightsBooked: 3,
-  },
-  reels: [
-    {
-      id: "tulay-morning",
-      title: "Sunrise rounds with Tülay",
-      description: "Medication checks, bone broth prep, and kennel updates streamed direct from the farm.",
-      media: { poster: "/images/story-mila.avif", video: "/videos/story-mila.mp4", alt: "Tülay caring for rescue dogs" },
-    },
-    {
-      id: "flight-escort",
-      title: "Escort briefing before Heathrow",
-      description: "Volunteers rehearse crate loading and DEFRA paperwork before heading to the airport.",
-      media: { poster: "/images/story-duman.avif", video: "/videos/story-duman.mp4", alt: "Volunteers preparing travel crates" },
-    },
-    {
-      id: "adopter-update",
-      title: "First sofa night in London",
-      description: "Nova’s adopters share the first cuddle at home and vet follow-up receipts.",
-      media: { poster: "/images/step-impact.avif", video: "/videos/step-impact.mp4", alt: "Adopter sharing update" },
-    },
-  ],
   bento: [
     {
       id: "meals",
@@ -3167,7 +2038,7 @@ const EN_CONTENT: LandingContent = {
     headline: "Make today a little safer for one dog.",
     body: "£1 triggers food, treatment, and transport. Join the donors powering two tonnes of aid every month.",
     ctaLabel: "£1 Feeds a Dog Today",
-    secondaryLabel: "Join the Facebook group",
+    secondaryLabel: "Visit the community feed",
     secondaryHref: CTA_COMMUNITY,
     donateHref: CTA_PRIMARY,
   },
@@ -3193,17 +2064,10 @@ const EN_CONTENT: LandingContent = {
         detail: "All volunteers, transport partners, and foster homes re-screened every 12 months.",
         proof: "Compliance log accessible inside donor transparency portal.",
       },
-      {
-        id: "community-proof",
-        title: "Live ledgers inside Facebook group",
-        detail: "Pinned transparency posts include monthly XLS exports, livestream archive, and escort rosters.",
-        proof: "See the Transparency guide in the Facebook group (Modules 01–03).",
-      },
     ],
     metrics: [
       { id: "meals", label: "Meals delivered", value: "2,184 / month", caption: "GPS-logged routes across Fethiye, Dalyan, Izmir." },
-      { id: "flights", label: "Flights escorted", value: "312", caption: "Volunteer-led journeys organised via community hub." },
-      { id: "donors", label: "Recurring donors", value: "18,247", caption: "Stripe + PayPal autopay supporters under quarterly review." },
+      { id: "rehomed", label: "Dogs rehomed", value: "182", caption: "UK & EU placements since 2021 launch." },
       { id: "rating", label: "Transparency rating", value: "4.9 / 5", caption: "Average donor review across Trustpilot + Google." },
     ],
     accreditations: [
@@ -3232,8 +2096,7 @@ const EN_CONTENT: LandingContent = {
       { label: "Email", value: "verify@angelshaven.org", href: "mailto:verify@angelshaven.org" },
       { label: "Phone", value: "+44 20 7946 0958", href: "tel:+442079460958" },
       { label: "HQ", value: "18 Market Walk, Islington, London N1 7SR" },
-      { label: "TR Ops", value: "Calis Mah. 112. Sokak No:4, Fethiye / Muğla" },
-      { label: "Facebook", value: "Rescue Updates Group", href: CTA_COMMUNITY },
+      { label: "TR Ops", value: "Calis Mah. 112. Sokak No:4, Fethiye / Mugla" },
     ],
     proofDocument: {
       label: "Download due diligence pack",
@@ -3243,12 +2106,11 @@ const EN_CONTENT: LandingContent = {
   },
   footer: {
     registration: "Charity Commission for England & Wales No. 1204821",
-    address: "18 Market Walk, Islington, London N1 7SR • Ops hub: Calis Mah. 112. Sokak No:4, Fethiye / Muğla",
+    address: "18 Market Walk, Islington, London N1 7SR • Ops hub: Calis Mah. 112. Sokak No:4, Fethiye / Mugla",
     email: "support@angelshaven.org",
     phone: "+44 20 7946 0958",
     hours: "Phone lines: Mon–Sat 08:00–20:00 GMT",
     socials: [
-      { label: "Facebook Group", href: CTA_COMMUNITY },
       { label: "Instagram", href: "https://instagram.com/angelshavenpaws" },
       { label: "YouTube", href: "https://youtube.com/@angelshaven" },
       { label: "TikTok", href: "https://www.tiktok.com/@angelshaven" },
