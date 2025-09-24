@@ -4,20 +4,34 @@ import { useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'ah-cookie-consent';
 
+function getLocalStorageConsent(): string | null {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null;
+  } catch (error) {
+    console.error('Cookie consent read blocked', error);
+    return null;
+  }
+}
+
+function setLocalStorageConsent(value: string) {
+  try {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(STORAGE_KEY, value);
+    }
+  } catch (error) {
+    console.error('Cookie consent write blocked', error);
+  }
+}
+
 export function CookieConsent() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const consent = window.localStorage.getItem(STORAGE_KEY);
-    if (!consent) {
-      setVisible(true);
-    }
+    if (!getLocalStorageConsent()) setVisible(true);
   }, []);
 
   const accept = () => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(STORAGE_KEY, 'accepted');
+    setLocalStorageConsent('accepted');
     setVisible(false);
   };
 
