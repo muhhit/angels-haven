@@ -81,6 +81,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${manrope.variable} ${playfair.variable} bg-background text-foreground antialiased`}>
+        <Script
+          src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"
+          strategy="beforeInteractive"
+        />
         <Script id="ms-clarity" strategy="afterInteractive">
           {`(function(c,l,a,r,i,t,y){
   c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};

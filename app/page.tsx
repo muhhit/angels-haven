@@ -7,6 +7,21 @@ import Lenis from "lenis";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
+declare global {
+  interface Window {
+    lottie?: {
+      loadAnimation: (config: {
+        container: HTMLElement;
+        renderer: "svg" | "canvas" | "html";
+        loop: boolean;
+        autoplay: boolean;
+        path: string;
+        name?: string;
+      }) => { destroy: () => void };
+    };
+  }
+}
+
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
@@ -346,6 +361,53 @@ function MagneticButton({ href, children, className, onHover }: { href: string; 
   );
 }
 
+function LottieBadge({ path, loop = true, className }: { path: string; loop?: boolean; className?: string }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let animation: { destroy: () => void } | null = null;
+    let interval: number | undefined;
+
+    const init = () => {
+      if (!containerRef.current || !window.lottie || animation) return;
+      animation = window.lottie.loadAnimation({
+        container: containerRef.current,
+        renderer: "svg",
+        loop,
+        autoplay: true,
+        path,
+        name: `lottie-${path}`,
+      });
+    };
+
+    if (typeof window !== "undefined") {
+      if (window.lottie) {
+        init();
+      } else {
+        interval = window.setInterval(() => {
+          if (window.lottie) {
+            init();
+            if (interval) {
+              window.clearInterval(interval);
+              interval = undefined;
+            }
+          }
+        }, 160);
+      }
+    }
+
+    return () => {
+      if (interval) window.clearInterval(interval);
+      animation?.destroy();
+    };
+  }, [loop, path]);
+
+  return <div ref={containerRef} className={className} aria-hidden="true" />;
+}
+
 function SmartVideo({ media, prefersReducedMotion }: { media: MediaAsset; prefersReducedMotion: boolean }) {
   const [shouldPlay, setShouldPlay] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -386,7 +448,7 @@ function SmartVideo({ media, prefersReducedMotion }: { media: MediaAsset; prefer
   }, [shouldPlay, prefersReducedMotion, media.video]);
 
   return (
-    <div ref={containerRef} className="relative overflow-hidden rounded-[1.8rem] border border-white/15 bg-[rgba(13,20,24,0.85)]">
+    <div ref={containerRef} className="relative overflow-hidden rounded-[1.8rem] border border-[rgba(208,178,148,0.35)] bg-white/85">
       <Image src={media.poster} alt={media.alt} width={960} height={540} className={`h-full w-full object-cover transition-opacity duration-500 ${shouldPlay && !prefersReducedMotion && media.video ? 'opacity-0' : 'opacity-100'}`} />
       {!prefersReducedMotion && media.video && (
         <video
@@ -400,18 +462,15 @@ function SmartVideo({ media, prefersReducedMotion }: { media: MediaAsset; prefer
           <source src={media.video} type="video/mp4" />
         </video>
       )}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#06090b] via-transparent to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#ffe7d0]/75 via-transparent to-transparent" />
     </div>
   );
 }
 
 function EndowedProgress() {
   return (
-    <div className="relative inline-flex items-center gap-2 rounded-full border border-white/20 bg-[rgba(10,18,26,0.75)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
-      <span className="relative inline-flex h-3 w-3 items-center justify-center">
-        <span className="absolute h-3 w-3 animate-ping rounded-full bg-[#ff7a00]/60" aria-hidden="true" />
-        <span className="relative h-1.5 w-1.5 rounded-full bg-[#ff9b38]" />
-      </span>
+    <div className="relative inline-flex items-center gap-3 rounded-full border border-[rgba(208,178,148,0.5)] bg-[rgba(255,244,231,0.9)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-[#7d5a42]">
+      <LottieBadge path="/lottie/heart-pulse.json" className="h-8 w-8" />
       Bahşedilmiş ilerleme aktif
     </div>
   );
@@ -438,24 +497,24 @@ function LiveDonationTicker({ ticker, prefersReducedMotion }: { ticker: HeroCont
   }, [prefersReducedMotion, entries.length]);
 
   return (
-    <div className="glass-card flex flex-col gap-3 rounded-[2rem] border border-white/12 bg-white/8 px-5 py-4 text-white/85" aria-live="polite">
-      <div className="flex items-center justify-between text-xs uppercase tracking-[0.28em] text-white/55">
+    <div className="glass-card flex flex-col gap-3 rounded-[2rem] border border-[rgba(208,178,148,0.4)] bg-white/85 px-5 py-4 text-[#2f2118]" aria-live="polite">
+      <div className="flex items-center justify-between text-xs uppercase tracking-[0.28em] text-[#7d5a42]">
         <span>{ticker.headline}</span>
         <span className="inline-flex items-center gap-1 text-[0.65rem]">
           <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-[#ff7a00]" aria-hidden="true" />
           Live
         </span>
       </div>
-      <ul className="flex flex-col gap-3 text-sm text-white/80">
+      <ul className="flex flex-col gap-3 text-sm text-[#4a372a]">
         {entries.slice(0, 4).map((entry) => (
-          <li key={entry.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/6 px-3 py-2">
+          <li key={entry.id} className="flex items-center justify-between gap-3 rounded-2xl bg-[rgba(255,250,245,0.82)] px-3 py-2">
             <div className="flex flex-col leading-tight">
-              <span className="font-semibold text-white">{entry.donor}</span>
-              <span className="text-xs uppercase tracking-[0.24em] text-white/55">{entry.city} • {entry.method}</span>
+              <span className="font-semibold text-[#2f2118]">{entry.donor}</span>
+              <span className="text-xs uppercase tracking-[0.24em] text-[#7d5a42]">{entry.city} • {entry.method}</span>
             </div>
             <div className="flex flex-col items-end leading-tight">
-              <span className="text-base font-semibold text-white">€{entry.amount}</span>
-              <span className="text-xs text-white/55">{entry.minutesAgo} dk önce</span>
+              <span className="text-base font-semibold text-[#2f2118]">€{entry.amount}</span>
+              <span className="text-xs text-[#7d5a42]">{entry.minutesAgo} dk önce</span>
             </div>
           </li>
         ))}
@@ -466,21 +525,21 @@ function LiveDonationTicker({ ticker, prefersReducedMotion }: { ticker: HeroCont
 
 function Hero({ content, prefersReducedMotion }: { content: LandingContent["hero"]; prefersReducedMotion: boolean }) {
   return (
-    <section id="hero" className="relative flex min-h-[100dvh] flex-col justify-end bg-[#070c10]">
+    <section id="hero" className="relative flex min-h-[100dvh] flex-col justify-end">
       <div className="absolute inset-0 overflow-hidden">
         <SmartVideo media={content.media} prefersReducedMotion={prefersReducedMotion} />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_24%,rgba(46,139,192,0.35),transparent_58%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,10,13,0.05)_0%,rgba(7,10,13,0.85)_62%,#070b0f_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(255,214,182,0.55),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,250,245,0.88)_0%,rgba(255,241,229,0.68)_52%,rgba(252,232,210,0.82)_84%,rgba(249,224,197,0.92)_100%)]" />
       </div>
-      <div className="section-shell relative z-10 flex flex-col gap-10 pb-24 pt-32 text-white">
+      <div className="section-shell relative z-10 flex flex-col gap-10 pb-28 pt-32 text-[#2f2118]">
         <div className="max-w-4xl space-y-5">
           <EndowedProgress />
-          <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/65">
+          <span className="inline-flex rounded-full border border-[rgba(208,178,148,0.4)] bg-white/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-[#7d5a42]">
             {content.eyebrow}
           </span>
-          <h1 className="display-hero text-white">{content.headline}</h1>
-          <p className="text-base text-white/75">{content.subheadline}</p>
-          <p className="max-w-2xl text-sm text-white/65">{content.description}</p>
+          <h1 className="display-hero text-[#2f2118] drop-shadow-[0_14px_32px_rgba(255,190,140,0.35)]">{content.headline}</h1>
+          <p className="text-base text-[#4d3628]">{content.subheadline}</p>
+          <p className="max-w-2xl text-sm text-[#6b4e3c]">{content.description}</p>
           <div className="flex flex-wrap gap-3 pt-3">
             <MagneticButton
               href={content.primaryCta.href}
@@ -490,7 +549,7 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent["hero
             </MagneticButton>
             <a
               href={content.secondaryCta.href}
-              className="cta-muted inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 text-xs uppercase tracking-[0.32em] text-white/75 transition hover:border-white/45 hover:text-white"
+              className="cta-muted inline-flex items-center gap-2 rounded-full border border-[rgba(208,178,148,0.45)] bg-white/70 px-6 py-3 text-xs uppercase tracking-[0.32em] text-[#5d4030] transition hover:border-[#ff7a00] hover:text-[#2f2118]"
               onClick={() => trackEvent("cta_click_secondary", { surface: "hero-secondary" })}
             >
               {content.secondaryCta.label}
@@ -498,10 +557,10 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent["hero
           </div>
         </div>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-          <div className="glass-card flex flex-col gap-4 rounded-[2.4rem] border border-white/15 bg-[rgba(13,20,24,0.8)] p-6 text-white">
+          <div className="glass-card flex flex-col gap-4 rounded-[2.4rem] border border-[rgba(208,178,148,0.4)] bg-white/85 p-6 text-[#2f2118]">
             <div>
-              <span className="text-xs uppercase tracking-[0.32em] text-white/55">{content.stat.label}</span>
-              <p className="mt-2 text-4xl font-semibold text-white">
+              <span className="text-xs uppercase tracking-[0.32em] text-[#7d5a42]">{content.stat.label}</span>
+              <p className="mt-2 text-4xl font-semibold text-[#2f2118]">
                 <AnimatedCounter value={content.stat.value} suffix={content.stat.suffix} />
               </p>
             </div>
@@ -510,7 +569,7 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent["hero
                 <button
                   key={option.amount}
                   type="button"
-                  className="inline-flex min-w-[88px] items-center justify-center rounded-full border border-white/18 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/75 transition hover:border-white/45 hover:text-white"
+                  className="inline-flex min-w-[88px] items-center justify-center rounded-full border border-[rgba(208,178,148,0.45)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#5a3f2d] transition hover:border-[#ff7a00] hover:text-[#2f2118]"
                   onClick={() => {
                     trackEvent("donation_amount_select", { amount: option.amount, currency: "EUR" });
                     window.open(content.primaryCta.href, "_blank");
@@ -521,14 +580,14 @@ function Hero({ content, prefersReducedMotion }: { content: LandingContent["hero
               ))}
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/55">
+              <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-[#7d5a42]">
                 <span>{content.progress.label}</span>
                 <span>{content.progress.percent}%</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-white/15">
+              <div className="h-2 w-full rounded-full bg-[rgba(255,170,110,0.25)]">
                 <div className="h-full rounded-full bg-[#ff7a00]" style={{ width: `${Math.min(100, content.progress.percent)}%` }} />
               </div>
-              <p className="text-xs text-white/60">{content.progress.caption}</p>
+              <p className="text-xs text-[#7d5a42]">{content.progress.caption}</p>
             </div>
           </div>
           <LiveDonationTicker ticker={content.ticker} prefersReducedMotion={prefersReducedMotion} />
@@ -557,31 +616,31 @@ function RescueJourney({ content, prefersReducedMotion }: { content: LandingCont
   }, [prefersReducedMotion]);
 
   return (
-    <section id="journey" className="snap-start bg-[#0c1319]">
+    <section id="journey" className="snap-start bg-[linear-gradient(180deg,#fff6ed_0%,#f7ede3_52%,#f2e4d7_100%)]">
       <div className="section-shell grid gap-12 py-28 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
-        <div className="sticky top-24 space-y-5 text-white">
-          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">{content.intro.eyebrow}</span>
-          <h2 className="heading-xl text-white">{content.intro.title}</h2>
-          <p className="text-sm text-white/70">{content.intro.copy}</p>
+        <div className="sticky top-24 space-y-5 text-[#2f2118]">
+          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-[#7d5a42]">{content.intro.eyebrow}</span>
+          <h2 className="heading-xl text-[#2f2118]">{content.intro.title}</h2>
+          <p className="text-sm text-[#5a3f2d]">{content.intro.copy}</p>
         </div>
         <div ref={containerRef} className="flex flex-col gap-10">
           {content.scenes.map((scene, index) => (
             <motion.article
               key={scene.id}
-              className="glass-card flex flex-col gap-5 rounded-[2.2rem] border border-white/12 bg-[rgba(13,20,24,0.85)] p-6 text-white"
+              className="glass-card flex flex-col gap-5 rounded-[2.2rem] border border-[rgba(208,178,148,0.4)] bg-white/85 p-6 text-[#2f2118]"
               initial={{ opacity: 0, y: 36 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.4 }}
               transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.08 }}
             >
-              <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/55">
+              <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-[#7d5a42]">
                 <span>{scene.badge}</span>
                 <span>{index + 1}/4</span>
               </div>
               <SmartVideo media={scene.media} prefersReducedMotion={prefersReducedMotion} />
               <div className="space-y-3">
-                <h3 className="heading-sm text-white">{scene.title}</h3>
-                <p className="text-sm text-white/70">{scene.copy}</p>
+                <h3 className="heading-sm text-[#2f2118]">{scene.title}</h3>
+                <p className="text-sm text-[#5a3f2d]">{scene.copy}</p>
               </div>
             </motion.article>
           ))}
@@ -594,33 +653,33 @@ function RescueJourney({ content, prefersReducedMotion }: { content: LandingCont
 function HopefulFaces({ content }: { content: LandingContent["faces"] }) {
   const [activePet, setActivePet] = useState<PetCard | null>(null);
   return (
-    <section id="faces" className="snap-start relative overflow-hidden bg-[#0b1117]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#2e8bc0_0%,transparent_58%)] opacity-30" aria-hidden />
-      <div className="section-shell relative z-10 flex flex-col gap-14 py-28 text-white">
+    <section id="faces" className="snap-start relative overflow-hidden bg-[linear-gradient(180deg,#fff4e8_0%,#f7ebdf_55%,#f1e0d2_100%)]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#ffe3c5_0%,transparent_60%)] opacity-70" aria-hidden />
+      <div className="section-shell relative z-10 flex flex-col gap-14 py-28 text-[#2f2118]">
         <div className="max-w-3xl space-y-4">
-          <span className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+          <span className="inline-flex w-fit items-center rounded-full border border-[rgba(208,178,148,0.45)] bg-white/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-[#7d5a42]">
             {content.eyebrow}
           </span>
           <h2 className="heading-xl">{content.title}</h2>
-          <p className="text-base text-white/75">{content.copy}</p>
+          <p className="text-base text-[#5a3f2d]">{content.copy}</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {content.cards.map((pet, index) => (
             <button
               key={pet.id}
               type="button"
-              className={`group relative overflow-hidden rounded-[2rem] border border-white/15 bg-[rgba(12,18,24,0.7)] text-left transition hover:border-white/35 ${index % 5 === 0 ? 'sm:col-span-2 lg:row-span-2' : ''}`}
+              className={`group relative overflow-hidden rounded-[2rem] border border-[rgba(208,178,148,0.4)] bg-[rgba(255,248,241,0.92)] text-left transition hover:border-[#ff7a00]/70 ${index % 5 === 0 ? 'sm:col-span-2 lg:row-span-2' : ''}`}
               onClick={() => setActivePet(pet)}
             >
-              <span className="absolute right-4 top-4 rounded-full border border-white/15 bg-white/15 px-3 py-1 text-[0.65rem] uppercase tracking-[0.32em] text-white/70">
+              <span className="absolute right-4 top-4 rounded-full border border-[rgba(255,170,120,0.6)] bg-white px-3 py-1 text-[0.65rem] uppercase tracking-[0.32em] text-[#ff7a00]">
                 {pet.badge}
               </span>
               <Image src={pet.image} alt={pet.name} width={520} height={520} className="h-64 w-full object-cover opacity-95 transition duration-500 group-hover:scale-105" />
               <div className="space-y-2 px-5 pb-6 pt-5">
-                <h3 className="text-lg font-semibold text-white">{pet.name}</h3>
-                <p className="text-xs uppercase tracking-[0.32em] text-white/55">{pet.age} • {pet.personality}</p>
-                <p className="text-sm text-white/70">{pet.shortStory}</p>
-                <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#ff9b38]">
+                <h3 className="text-lg font-semibold text-[#2f2118]">{pet.name}</h3>
+                <p className="text-xs uppercase tracking-[0.32em] text-[#7d5a42]">{pet.age} • {pet.personality}</p>
+                <p className="text-sm text-[#5a3f2d]">{pet.shortStory}</p>
+                <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#ff7a00]">
                   Yolculuğunu Gör →
                 </span>
               </div>
@@ -638,7 +697,7 @@ function SponsorshipModal({ pet, onClose }: { pet: PetCard | null; onClose: () =
     <AnimatePresence>
       {pet && (
         <motion.div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-[rgba(6,10,12,0.78)] backdrop-blur"
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-[rgba(255,237,220,0.78)] backdrop-blur"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -646,7 +705,7 @@ function SponsorshipModal({ pet, onClose }: { pet: PetCard | null; onClose: () =
           onClick={onClose}
         >
           <motion.div
-            className="glass-card relative max-w-lg rounded-[2.6rem] border border-white/15 bg-[rgba(13,20,24,0.92)] px-8 py-9 text-white"
+            className="glass-card relative max-w-lg rounded-[2.6rem] border border-[rgba(208,178,148,0.45)] bg-white px-8 py-9 text-[#2f2118]"
             initial={{ scale: 0.92, opacity: 0, y: 24 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.92, opacity: 0, y: 24 }}
@@ -655,22 +714,22 @@ function SponsorshipModal({ pet, onClose }: { pet: PetCard | null; onClose: () =
           >
             <button
               type="button"
-              className="absolute right-6 top-6 text-white/60 transition hover:text-white"
+              className="absolute right-6 top-6 text-[#7d5a42] transition hover:text-[#2f2118]"
               onClick={onClose}
               aria-label="Kapat"
             >
               ×
             </button>
-            <h3 className="heading-md text-white">{pet.name} için destek olun</h3>
-            <p className="mt-3 text-sm text-white/70">{pet.shortStory}</p>
+            <h3 className="heading-md text-[#2f2118]">{pet.name} için destek olun</h3>
+            <p className="mt-3 text-sm text-[#5a3f2d]">{pet.shortStory}</p>
             <div className="mt-4 grid gap-3">
-              <div className="rounded-2xl border border-white/15 bg-white/8 px-5 py-3">
-                <p className="text-sm font-semibold text-white">Aylık €{pet.sponsor.monthly}</p>
-                <p className="text-xs text-white/60">{pet.sponsor.impact}</p>
+              <div className="rounded-2xl border border-[rgba(208,178,148,0.4)] bg-[#fff6ec] px-5 py-3">
+                <p className="text-sm font-semibold text-[#2f2118]">Aylık €{pet.sponsor.monthly}</p>
+                <p className="text-xs text-[#7d5a42]">{pet.sponsor.impact}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/6 px-5 py-3">
-                <p className="text-sm font-semibold text-white">Tek seferlik €{pet.sponsor.oneOff}</p>
-                <p className="text-xs text-white/60">Uçuş fonuna katkı • Fatura e-posta ile gönderilir</p>
+              <div className="rounded-2xl border border-[rgba(208,178,148,0.35)] bg-[#fff1e2] px-5 py-3">
+                <p className="text-sm font-semibold text-[#2f2118]">Tek seferlik €{pet.sponsor.oneOff}</p>
+                <p className="text-xs text-[#7d5a42]">Uçuş fonuna katkı • Fatura e-posta ile gönderilir</p>
               </div>
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
@@ -679,7 +738,7 @@ function SponsorshipModal({ pet, onClose }: { pet: PetCard | null; onClose: () =
               </MagneticButton>
               <a
                 href="mailto:adoptions@angelshaven.org"
-                className="cta-muted inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 text-xs uppercase tracking-[0.32em] text-white/75 transition hover:border-white/40 hover:text-white"
+                className="cta-muted inline-flex items-center gap-2 rounded-full border border-[rgba(208,178,148,0.45)] bg-white/80 px-6 py-3 text-xs uppercase tracking-[0.32em] text-[#5a3f2d] transition hover:border-[#ff7a00] hover:text-[#2f2118]"
                 onClick={() => trackEvent("cta_click_secondary", { surface: "sponsor-modal", pet: pet.id })}
               >
                 Ailesi Ol
@@ -702,34 +761,34 @@ function DonationFlow({ content }: { content: LandingContent["donation"] }) {
   const total = useMemo(() => (coverFee ? Math.round(amount * 1.029 + 0.3) : amount), [amount, coverFee]);
 
   return (
-    <section id="donation" className="snap-start bg-[#0a1418]">
+    <section id="donation" className="snap-start bg-[linear-gradient(180deg,#fff3e6_0%,#faecdf_55%,#f3e2d4_100%)]">
       <div className="section-shell grid gap-12 py-28 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
-        <div className="space-y-5 text-white">
-          <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+        <div className="space-y-5 text-[#2f2118]">
+          <span className="inline-flex rounded-full border border-[rgba(208,178,148,0.45)] bg-white/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-[#7d5a42]">
             {content.eyebrow}
           </span>
-          <h2 className="heading-xl text-white">{content.title}</h2>
-          <p className="text-base text-white/75">{content.copy}</p>
-          <ul className="space-y-2 text-sm text-white/60">
+          <h2 className="heading-xl text-[#2f2118]">{content.title}</h2>
+          <p className="text-base text-[#5a3f2d]">{content.copy}</p>
+          <ul className="space-y-2 text-sm text-[#6b4e3c]">
             {content.options.map((option) => (
               <li key={option.amount}>✓ {option.label} · {option.impact}</li>
             ))}
           </ul>
-          <div className="flex flex-wrap items-center gap-3 pt-4 text-xs uppercase tracking-[0.28em] text-white/55">
+          <div className="flex flex-wrap items-center gap-3 pt-4 text-xs uppercase tracking-[0.28em] text-[#7d5a42]">
             {content.secureBadges.map((badge) => (
-              <span key={badge} className="rounded-full border border-white/15 bg-white/10 px-3 py-1">{badge}</span>
+              <span key={badge} className="rounded-full border border-[rgba(208,178,148,0.45)] bg-white/80 px-3 py-1">{badge}</span>
             ))}
           </div>
         </div>
-        <div className="glass-card flex flex-col gap-5 rounded-[2.6rem] border border-white/12 bg-[rgba(12,20,24,0.9)] p-6 text-white">
-          <div className="relative h-1.5 w-full rounded-full bg-white/12">
+        <div className="glass-card flex flex-col gap-5 rounded-[2.6rem] border border-[rgba(208,178,148,0.45)] bg-white/90 p-6 text-[#2f2118]">
+          <div className="relative h-1.5 w-full rounded-full bg-[rgba(255,170,110,0.25)]">
             <div className="h-full rounded-full bg-[#ff7a00]" style={{ width: `${(step / 4) * 100}%` }} />
-            <span className="absolute right-0 top-3 text-xs text-white/55">Adım {step}/4</span>
+            <span className="absolute right-0 top-3 text-xs text-[#7d5a42]">Adım {step}/4</span>
           </div>
 
           {step === 1 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white">Miktarını seç</h3>
+              <h3 className="text-lg font-semibold text-[#2f2118]">Miktarını seç</h3>
               <div className="grid gap-2 sm:grid-cols-3">
                 {content.options.map((option) => {
                   const isActive = option.amount === amount;
@@ -737,19 +796,23 @@ function DonationFlow({ content }: { content: LandingContent["donation"] }) {
                     <button
                       key={option.amount}
                       type="button"
-                      className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${isActive ? 'border-[#ff7a00] bg-[#ff7a00]/15 text-white' : 'border-white/20 bg-white/5 text-white/75 hover:border-white/45 hover:text-white'}`}
+                  className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                    isActive
+                      ? 'border-[#ff7a00] bg-[#ff7a00]/12 text-[#2f2118]'
+                      : 'border-[rgba(208,178,148,0.45)] bg-white/70 text-[#5a3f2d] hover:border-[#ff7a00] hover:text-[#2f2118]'
+                  }`}
                       onClick={() => {
                         setAmount(option.amount);
                         trackEvent("donation_amount_select", { amount: option.amount, surface: "wizard" });
                       }}
                     >
-                      <span className="text-lg font-semibold text-white">€{option.amount}</span>
-                      <p className="text-xs text-white/60">{option.label}</p>
+                      <span className="text-lg font-semibold text-[#2f2118]">€{option.amount}</span>
+                      <p className="text-xs text-[#7d5a42]">{option.label}</p>
                     </button>
                   );
                 })}
               </div>
-              <label className="flex items-center gap-2 text-xs text-white/65">
+              <label className="flex items-center gap-2 text-xs text-[#6b4e3c]">
                 <input type="checkbox" checked={coverFee} onChange={() => setCoverFee((prev) => !prev)} className="h-4 w-4 rounded border-white/30 bg-transparent" />
                 {content.feesLabel}
               </label>
@@ -765,24 +828,24 @@ function DonationFlow({ content }: { content: LandingContent["donation"] }) {
 
           {step === 2 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white">Seni nasıl hitap edelim?</h3>
+              <h3 className="text-lg font-semibold text-[#2f2118]">Seni nasıl hitap edelim?</h3>
               <label className="flex flex-col gap-2 text-sm">
-                <span className="text-xs uppercase tracking-[0.28em] text-white/55">Adınız</span>
+                <span className="text-xs uppercase tracking-[0.28em] text-[#7d5a42]">Adınız</span>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
-                  className="rounded-2xl border border-white/18 bg-white/6 px-4 py-3 text-sm text-white outline-none focus:border-[#ff7a00]"
+                  className="rounded-2xl border border-[rgba(208,178,148,0.45)] bg-[#fff6ed] px-4 py-3 text-sm text-[#2f2118] outline-none focus:border-[#ff7a00]"
                   placeholder="Adınızı yazın"
                 />
               </label>
               <label className="flex flex-col gap-2 text-sm">
-                <span className="text-xs uppercase tracking-[0.28em] text-white/55">E-posta</span>
+                <span className="text-xs uppercase tracking-[0.28em] text-[#7d5a42]">E-posta</span>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(event) => setFormData((prev) => ({ ...prev, email: event.target.value }))}
-                  className="rounded-2xl border border-white/18 bg-white/6 px-4 py-3 text-sm text-white outline-none focus:border-[#ff7a00]"
+                  className="rounded-2xl border border-[rgba(208,178,148,0.45)] bg-[#fff6ed] px-4 py-3 text-sm text-[#2f2118] outline-none focus:border-[#ff7a00]"
                   placeholder="turuncu@angelshaven.org"
                 />
               </label>
@@ -790,7 +853,7 @@ function DonationFlow({ content }: { content: LandingContent["donation"] }) {
                 <button type="button" className="cta-primary inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold" onClick={() => setStep(3)}>
                   Ödeme adımına geç
                 </button>
-                <button type="button" className="cta-muted inline-flex items-center justify-center rounded-full px-6 py-3 text-xs uppercase tracking-[0.3em] text-white/70" onClick={() => setStep(1)}>
+                <button type="button" className="cta-muted inline-flex items-center justify-center rounded-full px-6 py-3 text-xs uppercase tracking-[0.3em] text-[#5a3f2d]" onClick={() => setStep(1)}>
                   Geri dön
                 </button>
               </div>
@@ -799,25 +862,25 @@ function DonationFlow({ content }: { content: LandingContent["donation"] }) {
 
           {step === 3 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white">Ödeme yöntemini seç</h3>
-              <p className="text-sm text-white/60">Toplam tutar: <span className="font-semibold text-white">€{total}</span></p>
+              <h3 className="text-lg font-semibold text-[#2f2118]">Ödeme yöntemini seç</h3>
+              <p className="text-sm text-[#7d5a42]">Toplam tutar: <span className="font-semibold text-[#2f2118]">€{total}</span></p>
               <div className="grid gap-2">
                 {content.payments.map((payment) => (
                   <button
                     key={payment}
                     type="button"
-                    className="flex items-center justify-between rounded-2xl border border-white/18 bg-white/6 px-5 py-3 text-sm text-white/75 transition hover:border-white/45 hover:text-white"
+                    className="flex items-center justify-between rounded-2xl border border-[rgba(208,178,148,0.45)] bg-[#fff6ed] px-5 py-3 text-sm text-[#5a3f2d] transition hover:border-[#ff7a00] hover:text-[#2f2118]"
                     onClick={() => {
                       trackEvent("donation_payment_select", { method: payment });
                       setStep(4);
                     }}
                   >
                     <span>{payment}</span>
-                    <span className="text-xs uppercase tracking-[0.3em] text-white/55">Tek tık</span>
+                    <span className="text-xs uppercase tracking-[0.3em] text-[#7d5a42]">Tek tık</span>
                   </button>
                 ))}
               </div>
-              <button type="button" className="cta-muted inline-flex items-center justify-center rounded-full px-6 py-3 text-xs uppercase tracking-[0.3em] text-white/70" onClick={() => setStep(2)}>
+              <button type="button" className="cta-muted inline-flex items-center justify-center rounded-full px-6 py-3 text-xs uppercase tracking-[0.3em] text-[#5a3f2d]" onClick={() => setStep(2)}>
                 Geri dön
               </button>
             </div>
@@ -826,13 +889,13 @@ function DonationFlow({ content }: { content: LandingContent["donation"] }) {
           {step === 4 && (
             <div className="space-y-4 text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-[#ff7a00]/20 text-2xl">♥</div>
-              <h3 className="text-xl font-semibold text-white">Teşekkürler!</h3>
-              <p className="text-sm text-white/70">Bu akşam {amount === 29 ? "bir" : "birkaç"} pati daha tok uyuyacak. Paylaşıp etkini ikiye katlamak ister misin?</p>
+              <h3 className="text-xl font-semibold text-[#2f2118]">Teşekkürler!</h3>
+              <p className="text-sm text-[#5a3f2d]">Bu akşam {amount === 29 ? "bir" : "birkaç"} pati daha tok uyuyacak. Paylaşıp etkini ikiye katlamak ister misin?</p>
               <div className="flex flex-wrap justify-center gap-3">
                 <a href="https://api.whatsapp.com/send?text=Angel%20Haven%27da%20bir%20hikayeyi%20de%C4%9Fi%C5%9Ftirdim.%20Sen%20de%20destek%20ol%3A%20https%3A%2F%2Fangelshaven.org" className="cta-primary inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold" target="_blank">
                   WhatsApp&apos;ta paylaş
                 </a>
-                <button type="button" className="cta-muted inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs uppercase tracking-[0.3em] text-white/70" onClick={() => setStep(1)}>
+                <button type="button" className="cta-muted inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs uppercase tracking-[0.3em] text-[#5a3f2d]" onClick={() => setStep(1)}>
                   Yeni bağış başlat
                 </button>
               </div>
@@ -847,13 +910,13 @@ function DonationFlow({ content }: { content: LandingContent["donation"] }) {
 function BeforeAfter({ media }: { media: StoryItem["media"] }) {
   const [position, setPosition] = useState(52);
   return (
-    <div className="relative overflow-hidden rounded-[1.9rem] border border-white/12 bg-[rgba(12,18,24,0.85)]">
+    <div className="relative overflow-hidden rounded-[1.9rem] border border-[rgba(208,178,148,0.35)] bg-white/90">
       <Image src={media.after.poster} alt={media.after.alt} width={720} height={520} className="h-full w-full object-cover" />
       <div className="absolute inset-0 overflow-hidden" style={{ width: `${position}%` }}>
         <Image src={media.before.poster} alt={media.before.alt} width={720} height={520} className="h-full w-full object-cover" />
       </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-black/0" />
-      <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-3 text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
+      <div className="absolute inset-0 bg-gradient-to-t from-[#ffe9d0]/65 via-transparent to-transparent" />
+      <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#5a3f2d]">
         Önce
         <input
           type="range"
@@ -871,18 +934,18 @@ function BeforeAfter({ media }: { media: StoryItem["media"] }) {
 
 function RescueStories({ content, prefersReducedMotion }: { content: LandingContent["stories"]; prefersReducedMotion: boolean }) {
   return (
-    <section id="stories" className="snap-start bg-[#0d1519]">
+    <section id="stories" className="snap-start bg-[linear-gradient(180deg,#fff1e2_0%,#f7e7d9_55%,#f1dbcc_100%)]">
       <div className="section-shell grid gap-12 py-28">
-        <div className="max-w-3xl space-y-4 text-white">
-          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">{content.eyebrow}</span>
-          <h2 className="heading-xl text-white">{content.title}</h2>
-          <p className="text-base text-white/75">{content.copy}</p>
+        <div className="max-w-3xl space-y-4 text-[#2f2118]">
+          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-[#7d5a42]">{content.eyebrow}</span>
+          <h2 className="heading-xl text-[#2f2118]">{content.title}</h2>
+          <p className="text-base text-[#5a3f2d]">{content.copy}</p>
         </div>
         <div className="grid gap-7 md:grid-cols-2">
           {content.stories.map((story, index) => (
             <motion.article
               key={story.id}
-              className="glass-card flex h-full flex-col justify-between gap-6 rounded-[2.2rem] border border-white/12 bg-[rgba(13,20,24,0.85)] p-6 text-white"
+              className="glass-card flex h-full flex-col justify-between gap-6 rounded-[2.2rem] border border-[rgba(208,178,148,0.4)] bg-white/88 p-6 text-[#2f2118]"
               initial={{ opacity: 0, y: 38 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
@@ -891,17 +954,17 @@ function RescueStories({ content, prefersReducedMotion }: { content: LandingCont
               <BeforeAfter media={story.media} />
               <div className="space-y-4">
                 <div>
-                  <h3 className="heading-sm">{story.title}</h3>
-                  <p className="mt-2 text-sm text-white/70">{story.copy}</p>
+                  <h3 className="heading-sm text-[#2f2118]">{story.title}</h3>
+                  <p className="mt-2 text-sm text-[#5a3f2d]">{story.copy}</p>
                 </div>
                 {story.media.clip && (
                   <SmartVideo media={story.media.clip} prefersReducedMotion={prefersReducedMotion} />
                 )}
-                <p className="text-xs uppercase tracking-[0.32em] text-white/55">{story.stat}</p>
+                <p className="text-xs uppercase tracking-[0.32em] text-[#7d5a42]">{story.stat}</p>
               </div>
               <a
                 href={CTA_DONATE}
-                className="cta-muted inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-white/75"
+                className="cta-muted inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-[#5a3f2d]"
                 onClick={() => trackEvent("cta_click_primary", { surface: "stories", id: story.id })}
               >
                 Daha fazla hikâye fonla
@@ -916,56 +979,56 @@ function RescueStories({ content, prefersReducedMotion }: { content: LandingCont
 
 function CommunitySpotlight({ content }: { content: LandingContent["community"] }) {
   return (
-    <section id="community" className="snap-start bg-[#0a1116]">
-      <div className="section-shell flex flex-col gap-12 py-28 text-white">
+    <section id="community" className="snap-start bg-[linear-gradient(180deg,#fff4e9_0%,#f8ebdf_55%,#f1dece_100%)]">
+      <div className="section-shell flex flex-col gap-12 py-28 text-[#2f2118]">
         <div className="max-w-3xl space-y-4">
-          <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+          <span className="inline-flex rounded-full border border-[rgba(208,178,148,0.45)] bg-white/80 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-[#7d5a42]">
             {content.eyebrow}
           </span>
           <h2 className="heading-xl">{content.title}</h2>
-          <p className="text-base text-white/75">{content.copy}</p>
+          <p className="text-base text-[#5a3f2d]">{content.copy}</p>
         </div>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)]">
           <div className="grid gap-4 md:grid-cols-2">
             {content.posts.map((post) => (
-              <article key={post.id} className="glass-card flex flex-col gap-4 rounded-[2rem] border border-white/12 bg-[rgba(13,20,24,0.85)] p-5">
-                <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/55">
+              <article key={post.id} className="glass-card flex flex-col gap-4 rounded-[2rem] border border-[rgba(208,178,148,0.4)] bg-white/88 p-5">
+                <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-[#7d5a42]">
                   <span>{post.author}</span>
                   <span>{post.location}</span>
                 </div>
                 <Image src={post.image} alt={post.author} width={560} height={360} className="h-40 w-full rounded-[1.6rem] object-cover" />
-                <p className="text-sm text-white/70">“{post.quote}”</p>
+                <p className="text-sm text-[#5a3f2d]">“{post.quote}”</p>
               </article>
             ))}
           </div>
           <div className="flex flex-col gap-6">
-            <div className="glass-card space-y-4 rounded-[2rem] border border-white/12 bg-[rgba(13,20,24,0.85)] p-5">
-              <h3 className="text-lg font-semibold text-white">Anlık Etki Sayaçları</h3>
-              <ul className="space-y-3 text-sm text-white/65">
+            <div className="glass-card space-y-4 rounded-[2rem] border border-[rgba(208,178,148,0.4)] bg-white/88 p-5">
+              <h3 className="text-lg font-semibold text-[#2f2118]">Anlık Etki Sayaçları</h3>
+              <ul className="space-y-3 text-sm text-[#6b4e3c]">
                 {content.metrics.map((metric) => (
                   <li key={metric.id}>
-                    <span className="text-base font-semibold text-white">{metric.value}</span>
-                    <span className="block text-xs uppercase tracking-[0.3em] text-white/55">{metric.label}</span>
-                    <p className="text-xs text-white/55">{metric.caption}</p>
+                    <span className="text-base font-semibold text-[#2f2118]">{metric.value}</span>
+                    <span className="block text-xs uppercase tracking-[0.3em] text-[#7d5a42]">{metric.label}</span>
+                    <p className="text-xs text-[#7d5a42]">{metric.caption}</p>
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="glass-card space-y-4 rounded-[2rem] border border-white/12 bg-[rgba(13,20,24,0.85)] p-5">
-              <h3 className="text-lg font-semibold text-white">Partner Klinikler & Sponsorlar</h3>
-              <div className="flex flex-wrap gap-3 text-xs uppercase tracking-[0.28em] text-white/60">
+            <div className="glass-card space-y-4 rounded-[2rem] border border-[rgba(208,178,148,0.4)] bg-white/88 p-5">
+              <h3 className="text-lg font-semibold text-[#2f2118]">Partner Klinikler & Sponsorlar</h3>
+              <div className="flex flex-wrap gap-3 text-xs uppercase tracking-[0.28em] text-[#7d5a42]">
                 {content.partners.map((partner) => (
-                  <span key={partner.id} className="rounded-full border border-white/15 bg-white/10 px-4 py-2">{partner.label}</span>
+                  <span key={partner.id} className="rounded-full border border-[rgba(208,178,148,0.45)] bg-white/80 px-4 py-2">{partner.label}</span>
                 ))}
               </div>
             </div>
-            <div className="glass-card space-y-3 rounded-[2rem] border border-white/12 bg-[rgba(13,20,24,0.85)] p-5 text-sm text-white/70">
-              <h3 className="text-lg font-semibold text-white">Şeffaflık Kayıtları</h3>
+            <div className="glass-card space-y-3 rounded-[2rem] border border-[rgba(208,178,148,0.4)] bg-white/88 p-5 text-sm text-[#5a3f2d]">
+              <h3 className="text-lg font-semibold text-[#2f2118]">Şeffaflık Kayıtları</h3>
               <ul className="space-y-2">
                 {content.transparency.map((item) => (
                   <li key={item.id} className="flex items-center justify-between">
                     <span>{item.label}</span>
-                    <span className="text-xs uppercase tracking-[0.3em] text-white/55">{item.value}</span>
+                    <span className="text-xs uppercase tracking-[0.3em] text-[#7d5a42]">{item.value}</span>
                   </li>
                 ))}
               </ul>
@@ -994,34 +1057,34 @@ function FinalCTA({ content }: { content: LandingContent["final"] }) {
   };
 
   return (
-    <section id="share" className="snap-start relative flex min-h-[100dvh] items-center overflow-hidden bg-[#081015]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#2e8bc0_0%,transparent_62%)] opacity-25" aria-hidden />
-      <div className="section-shell relative z-10 grid gap-10 py-28 text-white lg:grid-cols-[minmax(0,1fr)_340px]">
+    <section id="share" className="snap-start relative flex min-h-[100dvh] items-center overflow-hidden bg-[linear-gradient(180deg,#fff2e3_0%,#f8e8da_60%,#f1dccd_100%)]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#ffe0c2_0%,transparent_62%)] opacity-55" aria-hidden />
+      <div className="section-shell relative z-10 grid gap-10 py-28 text-[#2f2118] lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-6">
-          <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-white/70">
+          <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-[#5a3f2d]">
             {content.eyebrow}
           </span>
           <h2 className="heading-xl">{content.title}</h2>
-          <p className="max-w-xl text-sm text-white/75">{content.copy}</p>
+          <p className="max-w-xl text-sm text-[#5a3f2d]">{content.copy}</p>
           <div className="flex flex-wrap gap-3 pt-2">
             <MagneticButton href={content.primaryCta.href} onHover={() => trackEvent("cta_click_primary", { surface: "final" })}>
               {content.primaryCta.label}
             </MagneticButton>
-            <a href={content.secondaryCta.href} className="cta-muted inline-flex items-center justify-center rounded-full px-6 py-3 text-xs uppercase tracking-[0.3em] text-white/75">
+            <a href={content.secondaryCta.href} className="cta-muted inline-flex items-center justify-center rounded-full px-6 py-3 text-xs uppercase tracking-[0.3em] text-[#5a3f2d]">
               {content.secondaryCta.label}
             </a>
           </div>
         </div>
-        <div className="glass-card flex flex-col gap-4 rounded-[2.4rem] border border-white/15 bg-[rgba(13,20,24,0.85)] p-6">
-          <h3 className="text-lg font-semibold text-white">Paylaş, hayat kurtar</h3>
-          <ul className="space-y-3 text-sm text-white/70">
+        <div className="glass-card flex flex-col gap-4 rounded-[2.4rem] border border-[rgba(208,178,148,0.4)] bg-white/90 p-6">
+          <h3 className="text-lg font-semibold text-[#2f2118]">Paylaş, hayat kurtar</h3>
+          <ul className="space-y-3 text-sm text-[#5a3f2d]">
             {content.shares.map((share) => (
               <li key={share.id}>
                 <a
                   href={share.href}
                   target={share.id === 'copy' ? '_self' : '_blank'}
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between rounded-2xl border border-white/15 bg-white/6 px-5 py-3 text-white/75 transition hover:border-white/40 hover:text-white"
+                  className="flex items-center justify-between rounded-2xl border border-white/15 bg-[#fff6ed] px-5 py-3 text-[#5a3f2d] transition hover:border-white/40 hover:text-white"
                   onClick={(event) => {
                     if (share.id === 'copy') {
                       event.preventDefault();
@@ -1032,7 +1095,7 @@ function FinalCTA({ content }: { content: LandingContent["final"] }) {
                   }}
                 >
                   <span>{share.label}</span>
-                  <span className="text-xs uppercase tracking-[0.3em] text-white/55">{share.description}</span>
+                  <span className="text-xs uppercase tracking-[0.3em] text-[#7d5a42]">{share.description}</span>
                 </a>
               </li>
             ))}
@@ -1046,20 +1109,20 @@ function FinalCTA({ content }: { content: LandingContent["final"] }) {
 
 function Footer({ content }: { content: LandingContent["footer"] }) {
   return (
-    <footer className="border-t border-white/10 bg-[#070c10] py-12 text-white/65">
+    <footer className="border-t border-white/10 bg-[#070c10] py-12 text-[#6b4e3c]">
       <div className="section-shell grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,280px)]">
         <div className="space-y-3">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-sm font-semibold text-white">AH</span>
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-sm font-semibold text-[#2f2118]">AH</span>
           <p className="text-sm">{content.registration}</p>
           <p className="text-sm">{content.address}</p>
           <p className="text-sm">{content.email}</p>
           <p className="text-sm">{content.phone}</p>
         </div>
-        <div className="space-y-2 text-xs uppercase tracking-[0.32em] text-white/45">
+        <div className="space-y-2 text-xs uppercase tracking-[0.32em] text-[#b38e74]">
           <span>Topluluk</span>
           <div className="flex flex-wrap gap-3">
             {content.socials.map((social) => (
-              <a key={social.label} href={social.href} className="rounded-full border border-white/20 px-3 py-1 text-white/70 transition hover:border-white/40 hover:text-white">
+              <a key={social.label} href={social.href} className="rounded-full border border-white/20 px-3 py-1 text-[#5a3f2d] transition hover:border-white/40 hover:text-white">
                 {social.label}
               </a>
             ))}
@@ -1093,13 +1156,13 @@ const landingContent: LandingContent = {
   hero: {
     eyebrow: "Sahne 0 • Empati",
     headline: "Angels Haven Dijital Sığınağı",
-    subheadline: "Kurtarma hikâyesine adım attığınız an, endişe yerini umuda bırakır.",
-    description: "Türkiye'nin güney sahillerinden Avrupa'daki evlerine uzanan yolculukları canlı canlı izleyin. Her kaydırma, her dokunuş, bir canın hikâyesine güç olur.",
+    subheadline: "İlk bakışta merhamet, bir sonraki nefeste umut.",
+    description: "Fethiye'nin tuzlu rüzgârından Londra'nın sıcak salonlarına uzanan yolculukları hissedin. Her kaydırma, her dokunuş, bir canın masalına sıcaklık taşır.",
     primaryCta: { label: "Bir Hikayeyi Değiştir", href: CTA_DONATE },
     secondaryCta: { label: "Bir Kase Mama Gönder", href: CTA_DONATE },
     media: {
       poster: "/images/hero-poster.avif",
-      video: "/videos/hero-ambient.mp4",
+      video: "/videos/hero-pack.mp4",
       alt: "Kurtarılmış köpekler koşarken",
     },
     stat: {
@@ -1132,8 +1195,8 @@ const landingContent: LandingContent = {
   journey: {
     intro: {
       eyebrow: "Sahne 1 • Umut",
-      title: "Kurtarma Döngüsü dört duygusal vuruştan oluşur",
-      copy: "GSAP destekli kaydırmalı hikâye, ziyaretçiyi sorundan çözüme taşıyarak empatiyi harekete dönüştürür.",
+      title: "Kurtarma döngüsü dört duygusal vuruştan oluşur",
+      copy: "Her sahne; korkudan güvene, soğuktan yumuşacık battaniyelere uzanan kokuları ve sesleri taşıyor. Kaydıkça kalbiniz de ekibe katılıyor.",
     },
     scenes: [
       {
@@ -1169,7 +1232,7 @@ const landingContent: LandingContent = {
   faces: {
     eyebrow: "Sahne 2 • Bağlantı",
     title: "Umut Dolu Yüzler: Sponsor ol, ailesi ol",
-    copy: "10 köpeklik bento ızgarası her hafta yenilenir. Kartlara dokunun, yolculuklarını keşfedin, sponsor olun veya aile olun.",
+    copy: "Her kart, güneş ışığına dönen bir bakış. Haftalık bento ızgarasında sıcak portreler, sarıldıkları battaniyeler ve bekledikleri kanepelerle buluş.",
     cards: [
       {
         id: "luna",
@@ -1276,7 +1339,7 @@ const landingContent: LandingContent = {
   donation: {
     eyebrow: "Sahne 3 • Güçlenme",
     title: "Etki simülatörü ile saniyeler içinde bağış",
-    copy: "Çok adımlı bağış formu, Apple/Google Pay ilk sırada ve şeffaf ücret mesajları ile dönüşümü artırır.",
+    copy: "Seçtiğin rakam anında mama kokusuna, sıcak yatağa ya da uçuş bileti fonuna dönüşüyor. Üç nefeste tamamlanan form, minnettarlığı hemen ulaştırıyor.",
     options: [
       { amount: 5, label: "Bir kâse mama", impact: "Bir günlük besleyici öğün" },
       { amount: 29, label: "Bir haftalık bakım", impact: "Mama + vitamin + pansuman" },
@@ -1289,7 +1352,7 @@ const landingContent: LandingContent = {
   stories: {
     eyebrow: "Sahne 4 • Aidiyet",
     title: "Dayanıklılık hikâyeleri: Önce & Sonra",
-    copy: "Etik hikâye anlatımı ve kısa tanıklık videoları, bağışı topluluk aidiyetine dönüştürür.",
+    copy: "Önce-sessiz ürkek bakışlar, sonra güneşle ısınan yüzler. Tanıklık videoları ve yumuşak geçişler, bağışını bir topluluk ritüeline dönüştürüyor.",
     stories: [
       {
         id: "mila",
@@ -1318,7 +1381,7 @@ const landingContent: LandingContent = {
   community: {
     eyebrow: "Sahne 5 • Topluluk",
     title: "Mutlu Patiler duvarı",
-    copy: "Facebook topluluğumuz ve Instagram hashtag'i #AngelsHavenAilesi'nden canlı seçkiler.",
+    copy: "Facebook grubumuz ve #AngelsHavenAilesi etiketi; kahve kokulu mutfaklarda çekilen videoları, ilk park koşularını, teşekkür notlarını hayata döküyor.",
     posts: [
       {
         id: "post-1",
@@ -1370,7 +1433,7 @@ const landingContent: LandingContent = {
   final: {
     eyebrow: "Sahne 6 • Paylaş",
     title: "Paylaş, hayat kurtar",
-    copy: "Bağış sonrası teşekkür, viral döngü ve otomasyon daveti. Hikâyemizi tek dokunuşla yay.",
+    copy: "Teşekkür mesajı, şefkat zincirinin başlangıcı. Tek dokunuşla WhatsApp'a, Instagram hikâyesine ya da e-postana taşı; yeni kahramanlar katılsın.",
     primaryCta: { label: "E-posta listesine katıl", href: "https://angelshaven.org/newsletter" },
     secondaryCta: { label: "Topluluk rehberini indir", href: "https://angelshaven.org/guide.pdf" },
     shares: [
