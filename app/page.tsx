@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
-import { AnimatePresence, motion, useSpring } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import Lenis from "lenis";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -17,62 +17,30 @@ type MediaAsset = {
   alt: string;
 };
 
-type StatMetric = {
-  label: string;
-  value: number;
-  suffix?: string;
-};
-
-type HeroQuickAction = {
+type DonationTickerEntry = {
   id: string;
-  label: string;
-  caption: string;
-  href: string;
-  icon: "adopt" | "sponsor" | "visit" | "donate";
+  donor: string;
+  amount: number;
+  city: string;
+  minutesAgo: number;
+  method: string;
 };
 
 type HeroContent = {
   eyebrow: string;
   headline: string;
   subheadline: string;
-  summary: string;
-  ctaLabel: string;
-  ctaHref: string;
-  donateHref: string;
-  donateAmounts: number[];
-  stats: StatMetric;
-  quickActions: HeroQuickAction[];
+  description: string;
+  primaryCta: { label: string; href: string };
+  secondaryCta: { label: string; href: string };
   media: MediaAsset;
-  defaultSelectionLabel: string;
-  liveCounter: {
-    label: string;
-    initial: number;
-    minIncrement: number;
-    maxIncrement: number;
-    intervalMs: number;
-    suffix?: string;
-  };
-  socialProof: {
-    id: string;
-    metric: string;
-    caption: string;
-    media?: MediaAsset;
-  }[];
-  urgency: {
-    remainingLabel: string;
-    remainingValue: string;
-    goalLabel: string;
-    goalPercent: number;
-    footer: string;
-  };
-  recurringHint: string;
-  ticker: {
-    headline: string;
-    entries: DonationTickerEntry[];
-  };
+  stat: { label: string; value: number; suffix?: string };
+  progress: { label: string; caption: string; percent: number };
+  donationOptions: { amount: number; label: string }[];
+  ticker: { headline: string; entries: DonationTickerEntry[] };
 };
 
-type StepItem = {
+type JourneyScene = {
   id: string;
   badge: string;
   title: string;
@@ -80,131 +48,97 @@ type StepItem = {
   media: MediaAsset;
 };
 
+type JourneyContent = {
+  intro: { eyebrow: string; title: string; copy: string };
+  scenes: JourneyScene[];
+};
+
+type PetCard = {
+  id: string;
+  name: string;
+  age: string;
+  personality: string;
+  shortStory: string;
+  image: string;
+  badge: string;
+  sponsor: { monthly: number; oneOff: number; impact: string };
+};
+
+type FacesContent = {
+  eyebrow: string;
+  title: string;
+  copy: string;
+  cards: PetCard[];
+};
+
+type DonationOption = {
+  amount: number;
+  label: string;
+  impact: string;
+};
+
+type DonationFlowContent = {
+  eyebrow: string;
+  title: string;
+  copy: string;
+  options: DonationOption[];
+  feesLabel: string;
+  payments: string[];
+  secureBadges: string[];
+};
+
 type StoryItem = {
   id: string;
   title: string;
   copy: string;
   stat: string;
-  media: {
-    before: MediaAsset;
-    after: MediaAsset;
-    clip?: MediaAsset;
-  };
-  ctaLabel: string;
-  ctaHref: string;
+  media: { before: MediaAsset; after: MediaAsset; clip?: MediaAsset };
 };
 
-type BentoItem = {
-  id: string;
+type StoriesContent = {
   eyebrow: string;
   title: string;
   copy: string;
-  ctaLabel: string;
-  href: string;
+  stories: StoryItem[];
 };
 
-type AdoptionPet = {
+type CommunityPost = {
   id: string;
-  name: string;
-  age: string;
-  breed: string;
-  temperament: string;
-  story: string;
-  image: string;
-  badge?: string;
-  medicalNotes?: string;
-  adoptHref: string;
-  sponsorHref: string;
-};
-
-type AdoptionContent = {
-  eyebrow: string;
-  headline: string;
-  intro: string;
-  cta: {
-    adopt: { label: string; href: string };
-    sponsor: { label: string; href: string };
-  };
-  pets: AdoptionPet[];
-  steps: { id: string; title: string; description: string }[];
-  fallback: {
-    headline: string;
-    copy: string;
-    donateLabel: string;
-    donateHref: string;
-  };
-};
-
-type FAQItem = {
-  question: string;
-  answer: string;
-};
-
-type DonationTickerEntry = {
-  id: string;
-  name: string;
-  amount: number;
-  city: string;
-  minutesAgo: number;
-  method: string;
-};
-
-type TrustSignal = {
-  id: string;
-  title: string;
-  detail: string;
-  proof: string;
-  icon?: string;
-};
-
-type TrustMetric = {
-  id: string;
-  label: string;
-  value: string;
-  caption: string;
-};
-
-type Accreditation = {
-  id: string;
-  label: string;
-  description: string;
-  href?: string;
-};
-
-type TrustReview = {
-  id: string;
+  author: string;
+  location: string;
   quote: string;
-  name: string;
-  role: string;
+  image: string;
 };
 
-type TrustMember = {
+type PartnerLogo = {
   id: string;
-  name: string;
-  role: string;
-  bio: string;
-  image?: string;
+  label: string;
 };
 
-type MediaMention = {
-  id: string;
-  outlet: string;
-  href: string;
-  date: string;
-  headline: string;
-};
-
-type TrustContent = {
-  headline: string;
+type CommunityContent = {
+  eyebrow: string;
+  title: string;
   copy: string;
-  signals: TrustSignal[];
-  metrics: TrustMetric[];
-  accreditations: Accreditation[];
-  reviews: TrustReview[];
-  team: TrustMember[];
-  media: MediaMention[];
-  contact: { label: string; value: string; href?: string }[];
-  proofDocument: { label: string; href: string; description: string };
+  posts: CommunityPost[];
+  partners: PartnerLogo[];
+  transparency: { id: string; label: string; value: string }[];
+  metrics: { id: string; label: string; value: string; caption: string }[];
+};
+
+type ShareLink = {
+  id: string;
+  label: string;
+  href: string;
+  description: string;
+};
+
+type FinalContent = {
+  eyebrow: string;
+  title: string;
+  copy: string;
+  primaryCta: { label: string; href: string };
+  secondaryCta: { label: string; href: string };
+  shares: ShareLink[];
 };
 
 type FooterContent = {
@@ -212,53 +146,27 @@ type FooterContent = {
   address: string;
   email: string;
   phone: string;
-  hours: string;
   socials: { label: string; href: string }[];
-  policies: { label: string; href: string }[];
-  legal: { label: string; href: string }[];
 };
 
-export type LandingContent = {
+type LandingContent = {
   hero: HeroContent;
-  usp: string[];
-  steps: StepItem[];
-  stories: StoryItem[];
-  adoption: AdoptionContent;
-  bento: BentoItem[];
-  faq: FAQItem[];
-  final: {
-    eyebrow: string;
-    headline: string;
-    body: string;
-    ctaLabel: string;
-    secondaryLabel: string;
-    secondaryHref: string;
-    donateHref: string;
-  };
-  trust: TrustContent;
+  journey: JourneyContent;
+  faces: FacesContent;
+  donation: DonationFlowContent;
+  stories: StoriesContent;
+  community: CommunityContent;
+  final: FinalContent;
   footer: FooterContent;
 };
 
-const CTA_PRIMARY = "https://www.paypal.com/donate";
-const CTA_REPORT = "https://example.com/angels-haven-transparency.pdf";
-const CTA_COMMUNITY = "https://www.facebook.com";
-
-const RAIL_SECTIONS = [
-  { id: "hero", label: "Intro" },
-  { id: "how", label: "Flow" },
-  { id: "stories", label: "Stories" },
-  { id: "impact", label: "Impact" },
-  { id: "trust", label: "Trust" },
-] as const;
-
-type RailSectionId = (typeof RAIL_SECTIONS)[number]["id"];
+const CTA_DONATE = "https://www.paypal.com/donate";
 
 function trackEvent(event: string, payload: Record<string, unknown> = {}) {
   if (typeof window === "undefined") return;
-  const data = { event, ...payload };
   const layer = (window as unknown as { dataLayer?: unknown[] }).dataLayer;
   if (Array.isArray(layer)) {
-    layer.push(data);
+    layer.push({ event, ...payload });
   } else {
     window.dispatchEvent(new CustomEvent(event, { detail: payload }));
   }
@@ -323,39 +231,20 @@ function useSmoothScroll(disabled: boolean) {
 
     let lenis: Lenis | null = null;
     let rafId: number | null = null;
-    let resizeAttached = false;
 
     const handleScrollUpdate = () => ScrollTrigger.update();
     const handleResize = () => ScrollTrigger.refresh();
 
-    const attachResize = () => {
-      if (!resizeAttached) {
-        window.addEventListener("resize", handleResize, { passive: true });
-        resizeAttached = true;
-      }
-    };
-
-    const detachResize = () => {
-      if (resizeAttached) {
-        window.removeEventListener("resize", handleResize);
-        resizeAttached = false;
-      }
-    };
-
     const startLenis = () => {
       if (lenis) return;
-      lenis = new Lenis({
-        duration: 1.05,
-        lerp: 0.08,
-        smoothWheel: true,
-      });
+      lenis = new Lenis({ duration: 1.05, lerp: 0.08, smoothWheel: true });
       const raf = (time: number) => {
         lenis?.raf(time);
         rafId = requestAnimationFrame(raf);
       };
       rafId = requestAnimationFrame(raf);
       lenis.on("scroll", handleScrollUpdate);
-      attachResize();
+      window.addEventListener("resize", handleResize, { passive: true });
     };
 
     const stopLenis = () => {
@@ -367,7 +256,7 @@ function useSmoothScroll(disabled: boolean) {
         cancelAnimationFrame(rafId);
         rafId = null;
       }
-      detachResize();
+      window.removeEventListener("resize", handleResize);
     };
 
     const handleDesktopToggle = (event: MediaQueryListEvent) => {
@@ -400,20 +289,23 @@ function useSmoothScroll(disabled: boolean) {
 
 function AnimatedCounter({ value, suffix }: { value: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement | null>(null);
-  const spring = useSpring(0, { stiffness: 90, damping: 20 });
-
   useEffect(() => {
-    spring.set(value);
-  }, [spring, value]);
-
-  useEffect(() => {
-    const unsubscribe = spring.on("change", (latest) => {
-      if (!ref.current) return;
-      ref.current.textContent = `${Math.round(latest).toLocaleString()}${suffix ?? ""}`;
+    if (!ref.current) return;
+    const obj = { current: 0 };
+    const tween = gsap.to(obj, {
+      current: value,
+      duration: 1.4,
+      ease: "power2.out",
+      onUpdate: () => {
+        if (ref.current) {
+          ref.current.textContent = `${Math.round(obj.current).toLocaleString()}${suffix ?? ""}`;
+        }
+      },
     });
-    return unsubscribe;
-  }, [spring, suffix]);
-
+    return () => {
+      tween.kill();
+    };
+  }, [value, suffix]);
   return <span ref={ref} />;
 }
 
@@ -425,18 +317,15 @@ function MagneticButton({ href, children, className, onHover }: { href: string; 
     if (prefersReducedMotion) return;
     const node = ref.current;
     if (!node) return;
-
     const handleMove = (event: PointerEvent) => {
       const rect = node.getBoundingClientRect();
       const x = event.clientX - rect.left - rect.width / 2;
       const y = event.clientY - rect.top - rect.height / 2;
       node.style.transform = `translate(${x * 0.15}px, ${y * 0.18}px)`;
     };
-
     const reset = () => {
       node.style.transform = "translate(0, 0)";
     };
-
     node.addEventListener("pointermove", handleMove);
     node.addEventListener("pointerleave", reset);
     return () => {
@@ -449,7 +338,7 @@ function MagneticButton({ href, children, className, onHover }: { href: string; 
     <a
       ref={ref}
       href={href}
-      className={`cta-primary inline-flex items-center gap-2 px-8 py-3 text-sm uppercase tracking-[0.32em] ${className ?? ""}`}
+      className={`cta-primary inline-flex items-center gap-3 px-8 py-3 text-base font-semibold transition ${className ?? ""}`}
       onMouseEnter={onHover}
     >
       {children}
@@ -457,657 +346,7 @@ function MagneticButton({ href, children, className, onHover }: { href: string; 
   );
 }
 
-function Navigation({ content, solid }: { content: LandingContent; solid: boolean }) {
-  return (
-    <header
-      className={`pointer-events-auto fixed inset-x-0 top-0 z-[90] transition-colors duration-300 ${
-        solid ? "bg-[rgba(11,15,13,0.7)] backdrop-blur-md" : "bg-transparent"
-      }`}
-    >
-      <div className="section-shell flex items-center justify-between py-4">
-        <a href="#hero" className="flex items-center gap-3 text-sm font-semibold tracking-[0.22em] text-white/80">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-white/5 text-white">
-            AH
-          </span>
-          <span className="hidden text-xs uppercase text-white/70 md:inline">Angels Haven</span>
-        </a>
-        <nav className="hidden items-center gap-10 text-sm font-medium text-white/70 md:flex">
-          <a href="#how" className="transition hover:text-white">
-            How it works
-          </a>
-          <a href="#stories" className="transition hover:text-white">
-            Rescue stories
-          </a>
-          <a href="#impact" className="transition hover:text-white">
-            Impact
-          </a>
-          <a href="#trust" className="transition hover:text-white">
-            Trust
-          </a>
-          <a href="#faq" className="transition hover:text-white">
-            FAQ
-          </a>
-          <a href="/about" className="transition hover:text-white">
-            About
-          </a>
-          <a href="/transparency" className="transition hover:text-white">
-            Transparency
-          </a>
-        </nav>
-        <MagneticButton
-          href={content.hero.donateHref}
-          className="hidden md:inline-flex"
-          onHover={() => trackEvent("cta_click_primary", { surface: "nav-hover" })}
-        >
-          £1 Feeds a Dog Today
-        </MagneticButton>
-      </div>
-    </header>
-  );
-}
-
-function RailIndicators() {
-  const [active, setActive] = useState<RailSectionId>("hero");
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActive(entry.target.id as RailSectionId);
-          }
-        });
-      },
-      { threshold: 0.35 }
-    );
-
-    RAIL_SECTIONS.forEach(({ id }) => {
-      const section = document.getElementById(id);
-      if (section) observer.observe(section);
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div className="fixed right-[3%] top-1/2 z-[70] hidden -translate-y-1/2 flex-col items-center gap-4 lg:flex">
-      {RAIL_SECTIONS.map(({ id, label }) => (
-        <button
-          key={id}
-          type="button"
-          className="group flex flex-col items-center gap-2 text-[0.55rem] uppercase tracking-[0.32em] text-white/40"
-          onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-        >
-          <span className="rail-indicator" data-active={active === id} />
-          <span className={`transition-colors ${active === id ? "text-white/85" : ""}`}>{label}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function HeroMedia({ media, active, prefersReducedMotion }: { media: MediaAsset; active: boolean; prefersReducedMotion: boolean }) {
-  const [canPlayVideo, setCanPlayVideo] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const query = window.matchMedia("(min-width: 640px)");
-    setCanPlayVideo(query.matches);
-    const handler = (event: MediaQueryListEvent) => setCanPlayVideo(event.matches);
-    if (typeof query.addEventListener === "function") {
-      query.addEventListener("change", handler);
-      return () => query.removeEventListener("change", handler);
-    }
-    query.addListener(handler);
-    return () => query.removeListener(handler);
-  }, []);
-
-  const shouldPlay = active && !prefersReducedMotion && Boolean(media.video) && canPlayVideo;
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      <Image src={media.poster} alt={media.alt} fill priority className={`object-cover transition-opacity duration-700 ${shouldPlay ? "opacity-0" : "opacity-100"}`} />
-      {shouldPlay && media.video && (
-        <video className="absolute inset-0 h-full w-full object-cover" autoPlay muted loop playsInline preload="auto" poster={media.poster}>
-          <source src={media.video} type="video/mp4" />
-        </video>
-      )}
-      <div className="hero-mask" />
-      <div className="hero-glow" data-variant="1" />
-      <div className="hero-glow" data-variant="2" />
-    </div>
-  );
-}
-
-function Hero({ content, prefersReducedMotion }: { content: LandingContent; prefersReducedMotion: boolean }) {
-  const mediaObserverRef = useRef<IntersectionObserver | null>(null);
-  const [videoActive, setVideoActive] = useState(false);
-  const heroRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const container = heroRef.current;
-    if (!container || prefersReducedMotion) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          setVideoActive(entry.isIntersecting);
-        });
-      },
-      { threshold: 0.4 }
-    );
-    observer.observe(container);
-    mediaObserverRef.current = observer;
-    return () => observer.disconnect();
-  }, [prefersReducedMotion]);
-
-  useEffect(() => {
-    if (prefersReducedMotion) {
-      setVideoActive(false);
-      mediaObserverRef.current?.disconnect();
-    }
-  }, [prefersReducedMotion]);
-
-  useEffect(() => {
-    const container = heroRef.current;
-    if (!container) return;
-    if (prefersReducedMotion) {
-      gsap.set(container.querySelectorAll("[data-hero-animate]") as NodeListOf<HTMLElement>, { opacity: 1, y: 0 });
-      return;
-    }
-    const screenQuery = window.matchMedia("(min-width: 768px)");
-    if (!screenQuery.matches) {
-      gsap.set(container.querySelectorAll("[data-hero-animate]") as NodeListOf<HTMLElement>, { opacity: 1, y: 0 });
-      return;
-    }
-    const ctx = gsap.context(() => {
-      gsap.from("[data-hero-animate]", {
-        y: 36,
-        opacity: 0,
-        stagger: 0.08,
-        duration: 1.1,
-        ease: "power3.out",
-        delay: 0.2,
-      });
-    }, heroRef);
-    return () => ctx.revert();
-  }, [prefersReducedMotion]);
-
-  const { hero } = content;
-
-  return (
-    <section
-      id="hero"
-      ref={heroRef}
-      className="hero-surface relative flex min-h-[100dvh] snap-start items-center justify-center overflow-hidden"
-    >
-      <HeroMedia media={hero.media} active={videoActive} prefersReducedMotion={prefersReducedMotion} />
-      <div className="section-shell relative z-10 grid gap-12 py-32 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="flex flex-col gap-8">
-          <span data-hero-animate className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-            {hero.eyebrow}
-          </span>
-          <div className="space-y-6 text-white">
-            <h1 data-hero-animate className="display-hero max-w-3xl">
-              {hero.headline}
-            </h1>
-            <p data-hero-animate className="max-w-xl text-base text-white/75">
-              {hero.subheadline}
-            </p>
-            <p data-hero-animate className="text-sm uppercase tracking-[0.35em] text-white/45">
-              {hero.summary}
-            </p>
-          </div>
-          <div className="flex flex-col gap-6" data-hero-animate>
-            <div className="flex flex-wrap items-center gap-4">
-              <MagneticButton
-                href={hero.ctaHref}
-                onHover={() => trackEvent("cta_click_primary", { surface: "hero-primary" })}
-              >
-                {hero.ctaLabel}
-              </MagneticButton>
-              <button
-                type="button"
-                className="cta-muted text-xs uppercase tracking-[0.3em] text-white/70"
-                onClick={() => {
-                  trackEvent("cta_click_secondary", { surface: "hero" });
-                  window.open(CTA_REPORT, "_blank");
-                }}
-              >
-                Monthly report
-              </button>
-            </div>
-            <DonationAmounts amounts={hero.donateAmounts} href={hero.donateHref} label={hero.defaultSelectionLabel} />
-            <RecurringHint hint={hero.recurringHint} />
-            <LiveDonationPulse config={hero.liveCounter} prefersReducedMotion={prefersReducedMotion} />
-            <UrgencyBanner data={hero.urgency} />
-            <HeroSocialProof items={hero.socialProof} prefersReducedMotion={prefersReducedMotion} />
-            <RecentDonationsTicker ticker={hero.ticker} prefersReducedMotion={prefersReducedMotion} />
-          </div>
-        </div>
-        <motion.aside
-          initial={{ opacity: 0, y: 32 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45, duration: 0.8, ease: "easeOut" }}
-          className="glass-card flex h-fit flex-col gap-6 rounded-[2.4rem] border border-white/15 bg-white/8 p-6 text-white/80"
-        >
-          <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-white/60">{hero.stats.label}</p>
-            <p className="mt-2 text-4xl font-semibold text-white">
-              <AnimatedCounter value={hero.stats.value} suffix={hero.stats.suffix} />
-            </p>
-          </div>
-          <HeroQuickActions actions={hero.quickActions} />
-        </motion.aside>
-      </div>
-      <ScrollPrompt />
-    </section>
-  );
-}
-
-function HeroQuickActions({ actions }: { actions: HeroQuickAction[] }) {
-  if (!actions.length) return null;
-  return (
-    <div className="flex flex-col gap-3 text-sm">
-      <span className="text-xs uppercase tracking-[0.28em] text-white/55">Quick ways to help</span>
-      <div className="flex flex-col gap-3">
-        {actions.map((action) => (
-          <a
-            key={action.id}
-            href={action.href}
-            className="group flex items-start gap-3 rounded-[1.8rem] border border-white/12 bg-white/6 px-4 py-3 transition hover:border-white/35 hover:bg-white/12"
-            onClick={() => trackEvent("hero_quick_action", { id: action.id })}
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white">
-              <QuickActionIcon icon={action.icon} />
-            </span>
-            <span className="flex flex-1 flex-col">
-              <span className="text-sm font-semibold text-white">{action.label}</span>
-              <span className="text-[0.75rem] text-white/65">{action.caption}</span>
-            </span>
-            <span className="mt-1 text-xs uppercase tracking-[0.24em] text-white/45">→</span>
-          </a>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ScrollPrompt() {
-  return (
-    <motion.div
-      className="absolute bottom-10 left-1/2 z-20 hidden -translate-x-1/2 flex-col items-center gap-2 text-xs font-semibold uppercase tracking-[0.32em] text-white/50 md:flex"
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 1.2, duration: 0.8, ease: "easeOut" }}
-    >
-      Scroll to explore
-      <motion.span
-        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20"
-        animate={{ y: [0, 6, 0] }}
-        transition={{ repeat: Infinity, duration: 2.4 }}
-      >
-        ↓
-      </motion.span>
-    </motion.div>
-  );
-}
-
-function DonationAmounts({ amounts, href, label }: { amounts: number[]; href: string; label?: string }) {
-  const [active, setActive] = useState<number | null>(amounts[0] ?? null);
-  return (
-    <div className="flex flex-wrap gap-2">
-      {amounts.map((amount) => {
-        const isActive = active === amount;
-        return (
-          <motion.button
-            key={amount}
-            type="button"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.96 }}
-            className={`inline-flex min-w-[72px] items-center justify-center rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.28em] transition ${
-              isActive ? "bg-white text-[#101815]" : "border border-white/20 text-white/70 hover:text-white"
-            }`}
-            onClick={() => {
-              setActive(amount);
-              trackEvent("donation_amount_select", { amount, currency: "GBP" });
-              window.open(href, "_blank");
-            }}
-          >
-            £{amount}
-          </motion.button>
-        );
-      })}
-      {label && (
-        <div className="mt-2 flex w-full items-center gap-2 text-xs text-white/70">
-          <span className="text-base">★</span>
-          <span>{label}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function LiveDonationPulse({
-  config,
-  prefersReducedMotion,
-}: {
-  config: HeroContent["liveCounter"];
-  prefersReducedMotion: boolean;
-}) {
-  const { initial, intervalMs, minIncrement, maxIncrement, label, suffix } = config;
-  const [count, setCount] = useState(initial);
-
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-    const interval = window.setInterval(() => {
-      setCount((prev) => prev + Math.floor(Math.random() * (maxIncrement - minIncrement + 1)) + minIncrement);
-    }, intervalMs);
-    return () => window.clearInterval(interval);
-  }, [intervalMs, minIncrement, maxIncrement, prefersReducedMotion]);
-
-  return (
-    <div className="glass-card flex items-center gap-4 rounded-[2rem] border border-white/15 bg-white/8 px-5 py-4 text-white/80">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-sm font-semibold text-white">
-        ⏱
-      </div>
-      <div className="flex flex-col leading-tight">
-        <span className="text-xs uppercase tracking-[0.28em] text-white/55">{label}</span>
-        <span className="text-lg font-semibold text-white">{count.toLocaleString()} {suffix}</span>
-      </div>
-    </div>
-  );
-}
-
-function HeroSocialProof({ items, prefersReducedMotion }: { items: HeroContent["socialProof"]; prefersReducedMotion: boolean }) {
-  if (!items.length) return null;
-  return (
-    <div className="grid gap-3 md:grid-cols-3">
-      {items.map((item) => (
-        <div key={item.id} className="glass-card flex flex-col gap-3 rounded-[1.6rem] border border-white/12 bg-white/6 px-4 py-4 text-white/80">
-          {item.media ? (
-            <div className="relative h-32 overflow-hidden rounded-[1.2rem] border border-white/12">
-              <Image src={item.media.poster} alt={item.media.alt} fill className={`object-cover transition-opacity duration-500 ${item.media.video && !prefersReducedMotion ? 'opacity-0' : 'opacity-100'}`} />
-              {item.media.video && !prefersReducedMotion && (
-                <video className="absolute inset-0 h-full w-full object-cover" autoPlay muted loop playsInline poster={item.media.poster}>
-                  <source src={item.media.video} type="video/mp4" />
-                </video>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-black/0" />
-            </div>
-          ) : null}
-          <div className="flex flex-col gap-1">
-            <span className="text-lg font-semibold text-white">{item.metric}</span>
-            <span className="text-xs uppercase tracking-[0.28em] text-white/55">{item.caption}</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function RecentDonationsTicker({ ticker, prefersReducedMotion }: { ticker: HeroContent["ticker"]; prefersReducedMotion: boolean }) {
-  const [entries, setEntries] = useState(() => ticker.entries);
-
-  useEffect(() => {
-    setEntries(ticker.entries);
-  }, [ticker.entries]);
-
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-    if (entries.length <= 1) return;
-    const id = window.setInterval(() => {
-      setEntries((prev) => {
-        if (prev.length <= 1) return prev;
-        const [first, ...rest] = prev;
-        return [...rest, first];
-      });
-    }, 4800);
-    return () => window.clearInterval(id);
-  }, [prefersReducedMotion, entries.length]);
-
-  return (
-    <div className="glass-card flex flex-col gap-3 rounded-[2rem] border border-white/12 bg-white/8 px-5 py-4 text-white/85" aria-live="polite">
-      <div className="flex items-center justify-between text-xs uppercase tracking-[0.28em] text-white/55">
-        <span>{ticker.headline}</span>
-        <span className="inline-flex items-center gap-1 text-[0.65rem]">
-          <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-[#ff6f61]" aria-hidden="true" />
-          Live
-        </span>
-      </div>
-      <ul className="flex flex-col gap-3 text-sm text-white/80">
-        {entries.slice(0, 4).map((entry) => (
-          <li key={entry.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/6 px-3 py-2">
-            <div className="flex flex-col leading-tight">
-              <span className="font-semibold text-white">{entry.name}</span>
-              <span className="text-xs uppercase tracking-[0.24em] text-white/55">{entry.city} • {entry.method}</span>
-            </div>
-            <div className="flex flex-col items-end leading-tight">
-              <span className="text-base font-semibold text-white">£{entry.amount}</span>
-              <span className="text-xs text-white/55">{entry.minutesAgo}m ago</span>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-
-function UrgencyBanner({ data }: { data: HeroContent["urgency"] }) {
-  const percent = Math.min(100, Math.max(0, data.goalPercent));
-  return (
-    <div className="glass-card flex flex-col gap-3 rounded-[2rem] border border-white/12 bg-white/8 px-5 py-4 text-white/80">
-      <div className="flex items-center justify-between text-xs uppercase tracking-[0.28em] text-white/55">
-        <span>{data.remainingLabel}</span>
-        <span>{data.goalLabel}</span>
-      </div>
-      <div className="flex items-baseline justify-between">
-        <span className="text-2xl font-semibold text-white">{data.remainingValue}</span>
-        <span className="text-xs text-white/60">{percent}%</span>
-      </div>
-      <div className="h-1.5 w-full rounded-full bg-white/15">
-        <div className="h-full rounded-full bg-white" style={{ width: `${percent}%` }} />
-      </div>
-      <span className="text-xs text-white/60">{data.footer}</span>
-    </div>
-  );
-}
-
-
-function TrustSection({ content, prefersReducedMotion }: { content: TrustContent; prefersReducedMotion: boolean }) {
-  return (
-    <section id="trust" className="snap-none bg-[#f2eee8] py-28 text-[#101815]">
-      <div className="section-shell space-y-16">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-          <div className="space-y-4">
-            <span className="text-xs font-semibold uppercase tracking-[0.32em] text-[#61726c]">Due diligence</span>
-            <h2 className="heading-xl text-[#101815]">{content.headline}</h2>
-            <p className="max-w-2xl text-sm text-[#3b4743]">{content.copy}</p>
-          </div>
-          <div className="grid gap-4">
-            {content.metrics.map((metric) => (
-              <motion.article
-                key={metric.id}
-                className="rounded-3xl border border-[#101815]/10 bg-white/80 p-6 shadow-[0_22px_60px_rgba(16,24,21,0.08)]"
-                initial={prefersReducedMotion ? false : { opacity: 0, y: 24 }}
-                whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.4 }}
-                transition={{ duration: 0.45, ease: "easeOut" }}
-              >
-                <p className="text-xs uppercase tracking-[0.3em] text-[#61726c]">{metric.label}</p>
-                <p className="mt-2 text-3xl font-semibold text-[#101815]">{metric.value}</p>
-                <p className="mt-2 text-sm text-[#3b4743]">{metric.caption}</p>
-              </motion.article>
-            ))}
-          </div>
-        </div>
-        <div className="grid gap-6 lg:grid-cols-3">
-          {content.signals.map((signal) => (
-            <motion.article
-              key={signal.id}
-              className="rounded-3xl border border-[#101815]/10 bg-white/90 p-6 text-[#101815] shadow-[0_18px_42px_rgba(16,24,21,0.08)]"
-              initial={prefersReducedMotion ? false : { opacity: 0, y: 28 }}
-              whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.35 }}
-              transition={{ duration: 0.45, ease: "easeOut" }}
-            >
-              <p className="text-xs uppercase tracking-[0.28em] text-[#61726c]">{signal.title}</p>
-              <p className="mt-3 text-sm text-[#3b4743]">{signal.detail}</p>
-              <p className="mt-4 text-xs text-[#3b4743]/80">{signal.proof}</p>
-            </motion.article>
-          ))}
-        </div>
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-          <div className="space-y-6">
-            <div className="flex flex-wrap gap-3">
-              {content.accreditations.map((item) => (
-                <span key={item.id} className="inline-flex items-center gap-2 rounded-full border border-[#101815]/15 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-[#42504b]">
-                  {item.label}
-                </span>
-              ))}
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              {content.reviews.map((review) => (
-                <motion.blockquote
-                  key={review.id}
-                  className="rounded-3xl border border-[#101815]/10 bg-white/90 p-6 text-[#101815] shadow-[0_18px_42px_rgba(16,24,21,0.08)]"
-                  initial={prefersReducedMotion ? false : { opacity: 0, y: 32 }}
-                  whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.35 }}
-                  transition={{ duration: 0.45, ease: "easeOut" }}
-                >
-                  <p className="text-sm text-[#2f3936]">“{review.quote}”</p>
-                  <footer className="mt-4 text-xs uppercase tracking-[0.26em] text-[#61726c]">
-                    {review.name} • {review.role}
-                  </footer>
-                </motion.blockquote>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-3xl border border-[#101815]/10 bg-white/90 p-6 shadow-[0_22px_60px_rgba(16,24,21,0.08)]">
-            <h3 className="heading-sm text-[#101815]">Proof kit</h3>
-            <p className="mt-3 text-sm text-[#3b4743]">{content.proofDocument.description}</p>
-            <a href={content.proofDocument.href} className="mt-5 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-[#0d5044]" target="_blank" rel="noreferrer">
-              {content.proofDocument.label}
-            </a>
-            <div className="mt-6 space-y-2 text-sm text-[#3b4743]">
-              {content.contact.map((item) => (
-                <div key={item.label} className="flex items-center gap-2">
-                  <span className="text-xs uppercase tracking-[0.28em] text-[#61726c]">{item.label}</span>
-                  {item.href ? (
-                    <a href={item.href} className="text-[#0d5044]">{item.value}</a>
-                  ) : (
-                    <span>{item.value}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-          <div className="space-y-4">
-            <h3 className="heading-md text-[#101815]">Meet the team powering rescues</h3>
-            <div className="grid gap-4 md:grid-cols-2">
-              {content.team.map((member) => (
-                <motion.article
-                  key={member.id}
-                  className="rounded-3xl border border-[#101815]/10 bg-white/95 p-6 shadow-[0_18px_42px_rgba(16,24,21,0.08)]"
-                  initial={prefersReducedMotion ? false : { opacity: 0, y: 26 }}
-                  whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.35 }}
-                  transition={{ duration: 0.45, ease: "easeOut" }}
-                >
-                  <p className="text-sm font-semibold text-[#101815]">{member.name}</p>
-                  <p className="text-xs uppercase tracking-[0.24em] text-[#61726c]">{member.role}</p>
-                  <p className="mt-3 text-sm text-[#3b4743]">{member.bio}</p>
-                </motion.article>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-4">
-            <h3 className="heading-md text-[#101815]">Press & independent mentions</h3>
-            <ul className="space-y-3 text-sm text-[#3b4743]">
-              {content.media.map((item) => (
-                <li key={item.id} className="flex flex-col rounded-2xl border border-[#101815]/10 bg-white/95 px-4 py-3">
-                  <span className="text-xs uppercase tracking-[0.26em] text-[#61726c]">{item.date} • {item.outlet}</span>
-                  <a href={item.href} className="text-[#0d5044]" target="_blank" rel="noreferrer">
-                    {item.headline}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FooterBar({ content }: { content: FooterContent }) {
-  return (
-    <footer className="bg-[#050807] py-12 text-white/70">
-      <div className="section-shell grid gap-10 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-        <div className="space-y-3 text-sm">
-          <span className="text-xs uppercase tracking-[0.28em] text-white/45">Registered charity</span>
-          <p className="text-white">{content.registration}</p>
-          <p>{content.address}</p>
-          <p>{content.hours}</p>
-          <div className="flex flex-wrap gap-4 text-xs uppercase tracking-[0.28em] text-white/60">
-            {content.socials.map((item) => (
-              <a key={item.label} href={item.href} className="transition hover:text-white" target="_blank" rel="noreferrer">
-                {item.label}
-              </a>
-            ))}
-          </div>
-        </div>
-        <div className="grid gap-6 text-sm">
-          <div className="space-y-2">
-            <span className="text-xs uppercase tracking-[0.28em] text-white/45">Get in touch</span>
-            <a href={`mailto:${content.email}`} className="block text-white">{content.email}</a>
-            <a href={`tel:${content.phone.replace(' ', '')}`} className="block text-white">{content.phone}</a>
-          </div>
-          <div className="space-y-3 text-xs uppercase tracking-[0.28em] text-white/60">
-            <div className="flex flex-wrap gap-4">
-              {content.policies.map((item) => (
-                <a key={item.label} href={item.href} className="transition hover:text-white">
-                  {item.label}
-                </a>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-4">
-              {content.legal.map((item) => (
-                <a key={item.label} href={item.href} className="transition hover:text-white">
-                  {item.label}
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
-function RecurringHint({ hint }: { hint: string }) {
-  if (!hint) return null;
-  return <p className="text-xs text-white/60">{hint}</p>;
-}
-
-function USPStrip({ items }: { items: string[] }) {
-  return (
-    <section className="snap-none border-t border-b border-white/10 bg-[rgba(12,16,14,0.72)] py-6 text-[0.7rem] uppercase tracking-[0.35em] text-white/60 backdrop-blur">
-      <div className="section-shell flex flex-wrap items-center justify-between gap-6">
-        {items.map((item) => (
-          <span key={item} className="flex items-center gap-3">
-            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-white/40" />
-            {item}
-          </span>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function SmartVideo({ media, prefersReducedMotion, onPlay }: { media: MediaAsset; prefersReducedMotion: boolean; onPlay: () => void }) {
+function SmartVideo({ media, prefersReducedMotion }: { media: MediaAsset; prefersReducedMotion: boolean }) {
   const [shouldPlay, setShouldPlay] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -1141,20 +380,18 @@ function SmartVideo({ media, prefersReducedMotion, onPlay }: { media: MediaAsset
       return;
     }
     const playPromise = video.play();
-    if (typeof playPromise?.then === "function") {
-      playPromise
-        .then(() => onPlay())
-        .catch(() => undefined);
+    if (typeof playPromise?.catch === "function") {
+      playPromise.catch(() => undefined);
     }
-  }, [shouldPlay, prefersReducedMotion, media.video, onPlay]);
+  }, [shouldPlay, prefersReducedMotion, media.video]);
 
   return (
-    <div ref={containerRef} className="relative overflow-hidden rounded-[1.8rem] border border-white/12 bg-white/5">
-      <Image src={media.poster} alt={media.alt} width={720} height={405} className={`h-full w-full object-cover transition-opacity duration-500 ${shouldPlay && !prefersReducedMotion && media.video ? "opacity-0" : "opacity-100"}`} />
+    <div ref={containerRef} className="relative overflow-hidden rounded-[1.8rem] border border-white/15 bg-[rgba(13,20,24,0.85)]">
+      <Image src={media.poster} alt={media.alt} width={960} height={540} className={`h-full w-full object-cover transition-opacity duration-500 ${shouldPlay && !prefersReducedMotion && media.video ? 'opacity-0' : 'opacity-100'}`} />
       {!prefersReducedMotion && media.video && (
         <video
           ref={videoRef}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${shouldPlay ? "opacity-100" : "opacity-0"}`}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${shouldPlay ? 'opacity-100' : 'opacity-0'}`}
           muted
           loop
           playsInline
@@ -1163,42 +400,444 @@ function SmartVideo({ media, prefersReducedMotion, onPlay }: { media: MediaAsset
           <source src={media.video} type="video/mp4" />
         </video>
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-black/0" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#06090b] via-transparent to-transparent" />
     </div>
   );
 }
 
-function HowItWorks({ content, prefersReducedMotion }: { content: LandingContent; prefersReducedMotion: boolean }) {
+function EndowedProgress() {
   return (
-    <section id="how" className="snap-start flex min-h-[100dvh] items-center bg-[#0d1412]">
-      <div className="section-shell grid gap-12 py-28 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:items-start">
-        <div className="sticky top-32 flex flex-col gap-4 text-white">
-          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">How it works</span>
-          <h2 className="heading-xl">Scroll-triggered scenes walk you from tap to wagging tail.</h2>
-          <p className="text-sm uppercase tracking-[0.28em] text-white/45">Choose amount → Pay securely → See impact</p>
+    <div className="relative inline-flex items-center gap-2 rounded-full border border-white/20 bg-[rgba(10,18,26,0.75)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
+      <span className="relative inline-flex h-3 w-3 items-center justify-center">
+        <span className="absolute h-3 w-3 animate-ping rounded-full bg-[#ff7a00]/60" aria-hidden="true" />
+        <span className="relative h-1.5 w-1.5 rounded-full bg-[#ff9b38]" />
+      </span>
+      Bahşedilmiş ilerleme aktif
+    </div>
+  );
+}
+
+function LiveDonationTicker({ ticker, prefersReducedMotion }: { ticker: HeroContent["ticker"]; prefersReducedMotion: boolean }) {
+  const [entries, setEntries] = useState(() => ticker.entries.slice(0, 6));
+
+  useEffect(() => {
+    setEntries(ticker.entries.slice(0, 6));
+  }, [ticker.entries]);
+
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    if (entries.length <= 1) return;
+    const id = window.setInterval(() => {
+      setEntries((prev) => {
+        if (prev.length <= 1) return prev;
+        const [first, ...rest] = prev;
+        return [...rest, first];
+      });
+    }, 5200);
+    return () => window.clearInterval(id);
+  }, [prefersReducedMotion, entries.length]);
+
+  return (
+    <div className="glass-card flex flex-col gap-3 rounded-[2rem] border border-white/12 bg-white/8 px-5 py-4 text-white/85" aria-live="polite">
+      <div className="flex items-center justify-between text-xs uppercase tracking-[0.28em] text-white/55">
+        <span>{ticker.headline}</span>
+        <span className="inline-flex items-center gap-1 text-[0.65rem]">
+          <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-[#ff7a00]" aria-hidden="true" />
+          Live
+        </span>
+      </div>
+      <ul className="flex flex-col gap-3 text-sm text-white/80">
+        {entries.slice(0, 4).map((entry) => (
+          <li key={entry.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white/6 px-3 py-2">
+            <div className="flex flex-col leading-tight">
+              <span className="font-semibold text-white">{entry.donor}</span>
+              <span className="text-xs uppercase tracking-[0.24em] text-white/55">{entry.city} • {entry.method}</span>
+            </div>
+            <div className="flex flex-col items-end leading-tight">
+              <span className="text-base font-semibold text-white">€{entry.amount}</span>
+              <span className="text-xs text-white/55">{entry.minutesAgo} dk önce</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function Hero({ content, prefersReducedMotion }: { content: LandingContent["hero"]; prefersReducedMotion: boolean }) {
+  return (
+    <section id="hero" className="relative flex min-h-[100dvh] flex-col justify-end bg-[#070c10]">
+      <div className="absolute inset-0 overflow-hidden">
+        <SmartVideo media={content.media} prefersReducedMotion={prefersReducedMotion} />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_24%,rgba(46,139,192,0.35),transparent_58%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,10,13,0.05)_0%,rgba(7,10,13,0.85)_62%,#070b0f_100%)]" />
+      </div>
+      <div className="section-shell relative z-10 flex flex-col gap-10 pb-24 pt-32 text-white">
+        <div className="max-w-4xl space-y-5">
+          <EndowedProgress />
+          <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/65">
+            {content.eyebrow}
+          </span>
+          <h1 className="display-hero text-white">{content.headline}</h1>
+          <p className="text-base text-white/75">{content.subheadline}</p>
+          <p className="max-w-2xl text-sm text-white/65">{content.description}</p>
+          <div className="flex flex-wrap gap-3 pt-3">
+            <MagneticButton
+              href={content.primaryCta.href}
+              onHover={() => trackEvent("cta_click_primary", { surface: "hero-primary" })}
+            >
+              {content.primaryCta.label}
+            </MagneticButton>
+            <a
+              href={content.secondaryCta.href}
+              className="cta-muted inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 text-xs uppercase tracking-[0.32em] text-white/75 transition hover:border-white/45 hover:text-white"
+              onClick={() => trackEvent("cta_click_secondary", { surface: "hero-secondary" })}
+            >
+              {content.secondaryCta.label}
+            </a>
+          </div>
         </div>
-        <div className="grid gap-8 lg:pl-12">
-          {content.steps.map((step, index) => (
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+          <div className="glass-card flex flex-col gap-4 rounded-[2.4rem] border border-white/15 bg-[rgba(13,20,24,0.8)] p-6 text-white">
+            <div>
+              <span className="text-xs uppercase tracking-[0.32em] text-white/55">{content.stat.label}</span>
+              <p className="mt-2 text-4xl font-semibold text-white">
+                <AnimatedCounter value={content.stat.value} suffix={content.stat.suffix} />
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {content.donationOptions.map((option) => (
+                <button
+                  key={option.amount}
+                  type="button"
+                  className="inline-flex min-w-[88px] items-center justify-center rounded-full border border-white/18 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/75 transition hover:border-white/45 hover:text-white"
+                  onClick={() => {
+                    trackEvent("donation_amount_select", { amount: option.amount, currency: "EUR" });
+                    window.open(content.primaryCta.href, "_blank");
+                  }}
+                >
+                  €{option.amount}
+                </button>
+              ))}
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/55">
+                <span>{content.progress.label}</span>
+                <span>{content.progress.percent}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-white/15">
+                <div className="h-full rounded-full bg-[#ff7a00]" style={{ width: `${Math.min(100, content.progress.percent)}%` }} />
+              </div>
+              <p className="text-xs text-white/60">{content.progress.caption}</p>
+            </div>
+          </div>
+          <LiveDonationTicker ticker={content.ticker} prefersReducedMotion={prefersReducedMotion} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function RescueJourney({ content, prefersReducedMotion }: { content: LandingContent["journey"]; prefersReducedMotion: boolean }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: containerRef.current,
+        start: "top center",
+        end: "bottom+=40% center",
+        pin: true,
+        pinSpacing: true,
+        scrub: 0.4,
+      });
+    }, containerRef);
+    return () => ctx.revert();
+  }, [prefersReducedMotion]);
+
+  return (
+    <section id="journey" className="snap-start bg-[#0c1319]">
+      <div className="section-shell grid gap-12 py-28 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+        <div className="sticky top-24 space-y-5 text-white">
+          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">{content.intro.eyebrow}</span>
+          <h2 className="heading-xl text-white">{content.intro.title}</h2>
+          <p className="text-sm text-white/70">{content.intro.copy}</p>
+        </div>
+        <div ref={containerRef} className="flex flex-col gap-10">
+          {content.scenes.map((scene, index) => (
             <motion.article
-              key={step.id}
-              className="glass-card flex h-full flex-col gap-5 rounded-[2.2rem] border border-white/12 bg-white/5 p-6 text-white"
-              initial={{ opacity: 0, y: 38 }}
+              key={scene.id}
+              className="glass-card flex flex-col gap-5 rounded-[2.2rem] border border-white/12 bg-[rgba(13,20,24,0.85)] p-6 text-white"
+              initial={{ opacity: 0, y: 36 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.35 }}
+              viewport={{ once: true, amount: 0.4 }}
               transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.08 }}
             >
-              <span className="text-xs font-semibold uppercase tracking-[0.32em] text-white/55">{step.badge}</span>
-              <SmartVideo
-                media={step.media}
-                prefersReducedMotion={prefersReducedMotion}
-                onPlay={() => trackEvent("story_video_play", { id: step.id, surface: "how_it_works" })}
-              />
+              <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/55">
+                <span>{scene.badge}</span>
+                <span>{index + 1}/4</span>
+              </div>
+              <SmartVideo media={scene.media} prefersReducedMotion={prefersReducedMotion} />
               <div className="space-y-3">
-                <h3 className="heading-sm text-white">{step.title}</h3>
-                <p className="text-sm text-white/70">{step.copy}</p>
+                <h3 className="heading-sm text-white">{scene.title}</h3>
+                <p className="text-sm text-white/70">{scene.copy}</p>
               </div>
             </motion.article>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HopefulFaces({ content }: { content: LandingContent["faces"] }) {
+  const [activePet, setActivePet] = useState<PetCard | null>(null);
+  return (
+    <section id="faces" className="snap-start relative overflow-hidden bg-[#0b1117]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#2e8bc0_0%,transparent_58%)] opacity-30" aria-hidden />
+      <div className="section-shell relative z-10 flex flex-col gap-14 py-28 text-white">
+        <div className="max-w-3xl space-y-4">
+          <span className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+            {content.eyebrow}
+          </span>
+          <h2 className="heading-xl">{content.title}</h2>
+          <p className="text-base text-white/75">{content.copy}</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {content.cards.map((pet, index) => (
+            <button
+              key={pet.id}
+              type="button"
+              className={`group relative overflow-hidden rounded-[2rem] border border-white/15 bg-[rgba(12,18,24,0.7)] text-left transition hover:border-white/35 ${index % 5 === 0 ? 'sm:col-span-2 lg:row-span-2' : ''}`}
+              onClick={() => setActivePet(pet)}
+            >
+              <span className="absolute right-4 top-4 rounded-full border border-white/15 bg-white/15 px-3 py-1 text-[0.65rem] uppercase tracking-[0.32em] text-white/70">
+                {pet.badge}
+              </span>
+              <Image src={pet.image} alt={pet.name} width={520} height={520} className="h-64 w-full object-cover opacity-95 transition duration-500 group-hover:scale-105" />
+              <div className="space-y-2 px-5 pb-6 pt-5">
+                <h3 className="text-lg font-semibold text-white">{pet.name}</h3>
+                <p className="text-xs uppercase tracking-[0.32em] text-white/55">{pet.age} • {pet.personality}</p>
+                <p className="text-sm text-white/70">{pet.shortStory}</p>
+                <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-[#ff9b38]">
+                  Yolculuğunu Gör →
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+      <SponsorshipModal pet={activePet} onClose={() => setActivePet(null)} />
+    </section>
+  );
+}
+
+function SponsorshipModal({ pet, onClose }: { pet: PetCard | null; onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      {pet && (
+        <motion.div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-[rgba(6,10,12,0.78)] backdrop-blur"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          onClick={onClose}
+        >
+          <motion.div
+            className="glass-card relative max-w-lg rounded-[2.6rem] border border-white/15 bg-[rgba(13,20,24,0.92)] px-8 py-9 text-white"
+            initial={{ scale: 0.92, opacity: 0, y: 24 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.92, opacity: 0, y: 24 }}
+            transition={{ duration: 0.32, ease: "easeOut" }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="absolute right-6 top-6 text-white/60 transition hover:text-white"
+              onClick={onClose}
+              aria-label="Kapat"
+            >
+              ×
+            </button>
+            <h3 className="heading-md text-white">{pet.name} için destek olun</h3>
+            <p className="mt-3 text-sm text-white/70">{pet.shortStory}</p>
+            <div className="mt-4 grid gap-3">
+              <div className="rounded-2xl border border-white/15 bg-white/8 px-5 py-3">
+                <p className="text-sm font-semibold text-white">Aylık €{pet.sponsor.monthly}</p>
+                <p className="text-xs text-white/60">{pet.sponsor.impact}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/6 px-5 py-3">
+                <p className="text-sm font-semibold text-white">Tek seferlik €{pet.sponsor.oneOff}</p>
+                <p className="text-xs text-white/60">Uçuş fonuna katkı • Fatura e-posta ile gönderilir</p>
+              </div>
+            </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <MagneticButton href={CTA_DONATE} onHover={() => trackEvent("cta_click_primary", { surface: "sponsor-modal", pet: pet.id })}>
+                Sponsor Ol
+              </MagneticButton>
+              <a
+                href="mailto:adoptions@angelshaven.org"
+                className="cta-muted inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 text-xs uppercase tracking-[0.32em] text-white/75 transition hover:border-white/40 hover:text-white"
+                onClick={() => trackEvent("cta_click_secondary", { surface: "sponsor-modal", pet: pet.id })}
+              >
+                Ailesi Ol
+              </a>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function DonationFlow({ content }: { content: LandingContent["donation"] }) {
+  type Step = 1 | 2 | 3 | 4;
+  const [step, setStep] = useState<Step>(1);
+  const [amount, setAmount] = useState<number>(content.options[1]?.amount ?? 29);
+  const [coverFee, setCoverFee] = useState(true);
+  const [formData, setFormData] = useState({ name: "", email: "" });
+
+  const total = useMemo(() => (coverFee ? Math.round(amount * 1.029 + 0.3) : amount), [amount, coverFee]);
+
+  return (
+    <section id="donation" className="snap-start bg-[#0a1418]">
+      <div className="section-shell grid gap-12 py-28 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+        <div className="space-y-5 text-white">
+          <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+            {content.eyebrow}
+          </span>
+          <h2 className="heading-xl text-white">{content.title}</h2>
+          <p className="text-base text-white/75">{content.copy}</p>
+          <ul className="space-y-2 text-sm text-white/60">
+            {content.options.map((option) => (
+              <li key={option.amount}>✓ {option.label} · {option.impact}</li>
+            ))}
+          </ul>
+          <div className="flex flex-wrap items-center gap-3 pt-4 text-xs uppercase tracking-[0.28em] text-white/55">
+            {content.secureBadges.map((badge) => (
+              <span key={badge} className="rounded-full border border-white/15 bg-white/10 px-3 py-1">{badge}</span>
+            ))}
+          </div>
+        </div>
+        <div className="glass-card flex flex-col gap-5 rounded-[2.6rem] border border-white/12 bg-[rgba(12,20,24,0.9)] p-6 text-white">
+          <div className="relative h-1.5 w-full rounded-full bg-white/12">
+            <div className="h-full rounded-full bg-[#ff7a00]" style={{ width: `${(step / 4) * 100}%` }} />
+            <span className="absolute right-0 top-3 text-xs text-white/55">Adım {step}/4</span>
+          </div>
+
+          {step === 1 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white">Miktarını seç</h3>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {content.options.map((option) => {
+                  const isActive = option.amount === amount;
+                  return (
+                    <button
+                      key={option.amount}
+                      type="button"
+                      className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${isActive ? 'border-[#ff7a00] bg-[#ff7a00]/15 text-white' : 'border-white/20 bg-white/5 text-white/75 hover:border-white/45 hover:text-white'}`}
+                      onClick={() => {
+                        setAmount(option.amount);
+                        trackEvent("donation_amount_select", { amount: option.amount, surface: "wizard" });
+                      }}
+                    >
+                      <span className="text-lg font-semibold text-white">€{option.amount}</span>
+                      <p className="text-xs text-white/60">{option.label}</p>
+                    </button>
+                  );
+                })}
+              </div>
+              <label className="flex items-center gap-2 text-xs text-white/65">
+                <input type="checkbox" checked={coverFee} onChange={() => setCoverFee((prev) => !prev)} className="h-4 w-4 rounded border-white/30 bg-transparent" />
+                {content.feesLabel}
+              </label>
+              <button
+                type="button"
+                className="cta-primary inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold"
+                onClick={() => setStep(2)}
+              >
+                Devam et →
+              </button>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white">Seni nasıl hitap edelim?</h3>
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="text-xs uppercase tracking-[0.28em] text-white/55">Adınız</span>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
+                  className="rounded-2xl border border-white/18 bg-white/6 px-4 py-3 text-sm text-white outline-none focus:border-[#ff7a00]"
+                  placeholder="Adınızı yazın"
+                />
+              </label>
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="text-xs uppercase tracking-[0.28em] text-white/55">E-posta</span>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(event) => setFormData((prev) => ({ ...prev, email: event.target.value }))}
+                  className="rounded-2xl border border-white/18 bg-white/6 px-4 py-3 text-sm text-white outline-none focus:border-[#ff7a00]"
+                  placeholder="turuncu@angelshaven.org"
+                />
+              </label>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <button type="button" className="cta-primary inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold" onClick={() => setStep(3)}>
+                  Ödeme adımına geç
+                </button>
+                <button type="button" className="cta-muted inline-flex items-center justify-center rounded-full px-6 py-3 text-xs uppercase tracking-[0.3em] text-white/70" onClick={() => setStep(1)}>
+                  Geri dön
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white">Ödeme yöntemini seç</h3>
+              <p className="text-sm text-white/60">Toplam tutar: <span className="font-semibold text-white">€{total}</span></p>
+              <div className="grid gap-2">
+                {content.payments.map((payment) => (
+                  <button
+                    key={payment}
+                    type="button"
+                    className="flex items-center justify-between rounded-2xl border border-white/18 bg-white/6 px-5 py-3 text-sm text-white/75 transition hover:border-white/45 hover:text-white"
+                    onClick={() => {
+                      trackEvent("donation_payment_select", { method: payment });
+                      setStep(4);
+                    }}
+                  >
+                    <span>{payment}</span>
+                    <span className="text-xs uppercase tracking-[0.3em] text-white/55">Tek tık</span>
+                  </button>
+                ))}
+              </div>
+              <button type="button" className="cta-muted inline-flex items-center justify-center rounded-full px-6 py-3 text-xs uppercase tracking-[0.3em] text-white/70" onClick={() => setStep(2)}>
+                Geri dön
+              </button>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="space-y-4 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-[#ff7a00]/20 text-2xl">♥</div>
+              <h3 className="text-xl font-semibold text-white">Teşekkürler!</h3>
+              <p className="text-sm text-white/70">Bu akşam {amount === 29 ? "bir" : "birkaç"} pati daha tok uyuyacak. Paylaşıp etkini ikiye katlamak ister misin?</p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <a href="https://api.whatsapp.com/send?text=Angel%20Haven%27da%20bir%20hikayeyi%20de%C4%9Fi%C5%9Ftirdim.%20Sen%20de%20destek%20ol%3A%20https%3A%2F%2Fangelshaven.org" className="cta-primary inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold" target="_blank">
+                  WhatsApp&apos;ta paylaş
+                </a>
+                <button type="button" className="cta-muted inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs uppercase tracking-[0.3em] text-white/70" onClick={() => setStep(1)}>
+                  Yeni bağış başlat
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>
@@ -1208,14 +847,14 @@ function HowItWorks({ content, prefersReducedMotion }: { content: LandingContent
 function BeforeAfter({ media }: { media: StoryItem["media"] }) {
   const [position, setPosition] = useState(52);
   return (
-    <div className="relative overflow-hidden rounded-[1.9rem] border border-white/12 bg-white/5">
+    <div className="relative overflow-hidden rounded-[1.9rem] border border-white/12 bg-[rgba(12,18,24,0.85)]">
       <Image src={media.after.poster} alt={media.after.alt} width={720} height={520} className="h-full w-full object-cover" />
       <div className="absolute inset-0 overflow-hidden" style={{ width: `${position}%` }}>
         <Image src={media.before.poster} alt={media.before.alt} width={720} height={520} className="h-full w-full object-cover" />
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-black/0" />
       <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-3 text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
-        Before
+        Önce
         <input
           type="range"
           min={0}
@@ -1224,29 +863,30 @@ function BeforeAfter({ media }: { media: StoryItem["media"] }) {
           onInput={(event) => setPosition(Number((event.target as HTMLInputElement).value))}
           className="h-[2px] w-[60%] appearance-none rounded-full bg-white/30"
         />
-        After
+        Sonra
       </div>
     </div>
   );
 }
 
-function Stories({ content, prefersReducedMotion }: { content: LandingContent; prefersReducedMotion: boolean }) {
+function RescueStories({ content, prefersReducedMotion }: { content: LandingContent["stories"]; prefersReducedMotion: boolean }) {
   return (
-    <section id="stories" className="snap-start flex min-h-[100dvh] items-center bg-[#0e1a16]">
-      <div className="section-shell grid gap-10 py-28">
+    <section id="stories" className="snap-start bg-[#0d1519]">
+      <div className="section-shell grid gap-12 py-28">
         <div className="max-w-3xl space-y-4 text-white">
-          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">Rescue stories</span>
-          <h2 className="heading-xl">Micro-donations opening cinematic rescue chapters.</h2>
+          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">{content.eyebrow}</span>
+          <h2 className="heading-xl text-white">{content.title}</h2>
+          <p className="text-base text-white/75">{content.copy}</p>
         </div>
         <div className="grid gap-7 md:grid-cols-2">
           {content.stories.map((story, index) => (
             <motion.article
               key={story.id}
-              className="glass-card flex h-full flex-col justify-between gap-6 rounded-[2.2rem] border border-white/12 bg-white/5 p-6 text-white"
+              className="glass-card flex h-full flex-col justify-between gap-6 rounded-[2.2rem] border border-white/12 bg-[rgba(13,20,24,0.85)] p-6 text-white"
               initial={{ opacity: 0, y: 38 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.1 }}
+              transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.08 }}
             >
               <BeforeAfter media={story.media} />
               <div className="space-y-4">
@@ -1254,19 +894,17 @@ function Stories({ content, prefersReducedMotion }: { content: LandingContent; p
                   <h3 className="heading-sm">{story.title}</h3>
                   <p className="mt-2 text-sm text-white/70">{story.copy}</p>
                 </div>
-                <SmartVideo
-                  media={{ poster: story.media.after.poster, video: story.media.clip?.video, alt: story.media.after.alt }}
-                  prefersReducedMotion={prefersReducedMotion}
-                  onPlay={() => trackEvent("story_video_play", { id: story.id, surface: "stories" })}
-                />
+                {story.media.clip && (
+                  <SmartVideo media={story.media.clip} prefersReducedMotion={prefersReducedMotion} />
+                )}
                 <p className="text-xs uppercase tracking-[0.32em] text-white/55">{story.stat}</p>
               </div>
               <a
-                href={story.ctaHref}
+                href={CTA_DONATE}
                 className="cta-muted inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-white/75"
                 onClick={() => trackEvent("cta_click_primary", { surface: "stories", id: story.id })}
               >
-                {story.ctaLabel}
+                Daha fazla hikâye fonla
               </a>
             </motion.article>
           ))}
@@ -1276,859 +914,500 @@ function Stories({ content, prefersReducedMotion }: { content: LandingContent; p
   );
 }
 
-function AdoptionShowcase({
-  content,
-  prefersReducedMotion,
-}: {
-  content: LandingContent["adoption"];
-  prefersReducedMotion: boolean;
-}) {
+function CommunitySpotlight({ content }: { content: LandingContent["community"] }) {
   return (
-    <section id="adopt" className="snap-start relative overflow-hidden bg-[#0b1612]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#1c6956_0%,transparent_58%)] opacity-40" aria-hidden />
-      <div className="section-shell relative z-10 flex flex-col gap-12 py-28 text-white">
-        <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="max-w-3xl space-y-5">
-            <span className="inline-flex w-fit items-center rounded-full border border-white/20 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
-              {content.eyebrow}
-            </span>
-            <h2 className="heading-xl">{content.headline}</h2>
-            <p className="text-base text-white/75">{content.intro}</p>
-            <div className="flex flex-wrap gap-3 pt-2">
-              <MagneticButton
-                href={content.cta.adopt.href}
-                onHover={() => trackEvent("cta_click_primary", { surface: "adoption-primary" })}
-              >
-                {content.cta.adopt.label}
-              </MagneticButton>
-              <button
-                type="button"
-                className="cta-muted inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/8 px-6 py-3 text-xs uppercase tracking-[0.32em] text-white/75 transition hover:border-white/40 hover:text-white"
-                onClick={() => {
-                  trackEvent("cta_click_primary", { surface: "adoption-sponsor" });
-                  window.open(content.cta.sponsor.href, "_blank");
-                }}
-              >
-                {content.cta.sponsor.label}
-              </button>
-            </div>
-          </div>
-          <div className="glass-card h-fit rounded-[2.4rem] border border-white/15 bg-white/8 p-6 text-white/80">
-            <h3 className="heading-sm text-white">Adoption journey in 3 steps</h3>
-            <ul className="mt-4 space-y-4 text-sm text-white/70">
-              {content.steps.map((step) => (
-                <li key={step.id} className="flex items-start gap-3">
-                  <span className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/8 text-xs font-semibold uppercase tracking-[0.24em] text-white/70">
-                    {step.id}
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-white">{step.title}</p>
-                    <p className="text-[0.85rem] text-white/65">{step.description}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {content.pets.map((pet, index) => (
-            <motion.article
-              key={pet.id}
-              className="group glass-card flex h-full flex-col overflow-hidden rounded-[2.3rem] border border-white/15 bg-white/8"
-              initial={{ opacity: 0, y: 32 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.55, ease: "easeOut", delay: prefersReducedMotion ? 0 : index * 0.08 }}
-            >
-              <div className="relative aspect-[4/5] w-full overflow-hidden">
-                <Image
-                  src={pet.image}
-                  alt={`Portrait of ${pet.name}`}
-                  fill
-                  sizes="(min-width: 1280px) 360px, (min-width: 768px) 45vw, 90vw"
-                  className="object-cover transition-transform duration-700 group-hover:scale-[1.05]"
-                />
-                {pet.badge ? (
-                  <span className="absolute left-4 top-4 rounded-full border border-white/20 bg-white/20 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-white backdrop-blur">
-                    {pet.badge}
-                  </span>
-                ) : null}
-              </div>
-              <div className="flex flex-1 flex-col gap-4 p-6 text-white">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="heading-sm text-white">{pet.name}</h3>
-                    <span className="text-xs uppercase tracking-[0.28em] text-white/50">{pet.age}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-xs text-white/60">
-                    <span className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 uppercase tracking-[0.24em]">
-                      {pet.breed}
-                    </span>
-                    <span className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 uppercase tracking-[0.24em]">
-                      {pet.temperament}
-                    </span>
-                    {pet.medicalNotes ? (
-                      <span className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-3 py-1 uppercase tracking-[0.24em]">
-                        {pet.medicalNotes}
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="text-sm text-white/70">{pet.story}</p>
-                </div>
-                <div className="mt-auto flex flex-wrap gap-3">
-                  <a
-                    href={pet.adoptHref}
-                    className="cta-primary inline-flex items-center justify-center px-6 py-2 text-[0.7rem] uppercase tracking-[0.32em]"
-                    onClick={() => trackEvent("cta_click_primary", { surface: "adoption-card", id: pet.id })}
-                  >
-                    Start adoption
-                  </a>
-                  <a
-                    href={pet.sponsorHref}
-                    className="cta-muted inline-flex items-center justify-center rounded-full border border-white/20 px-5 py-2 text-[0.7rem] uppercase tracking-[0.28em] text-white/75"
-                    onClick={() => trackEvent("cta_click_primary", { surface: "adoption-sponsor-card", id: pet.id })}
-                  >
-                    Sponsor {pet.name}
-                  </a>
-                </div>
-              </div>
-            </motion.article>
-          ))}
-        </div>
-        <div className="glass-card flex flex-col gap-4 rounded-[2.4rem] border border-white/15 bg-white/6 p-6 text-white/80 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-2">
-            <h3 className="heading-sm text-white">{content.fallback.headline}</h3>
-            <p className="text-sm text-white/70">{content.fallback.copy}</p>
-          </div>
-          <button
-            type="button"
-            className="cta-primary inline-flex items-center justify-center px-6 py-3 text-xs uppercase tracking-[0.32em]"
-            onClick={() => {
-              trackEvent("cta_click_primary", { surface: "adoption-fallback" });
-              window.open(content.fallback.donateHref, "_blank");
-            }}
-          >
-            {content.fallback.donateLabel}
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Bento({ content }: { content: LandingContent }) {
-  return (
-    <section id="impact" className="snap-start flex min-h-[100dvh] items-center bg-[#101b16]">
-      <div className="section-shell grid gap-12 py-28">
-        <div className="max-w-3xl space-y-4 text-white">
-          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">Impact system</span>
-          <h2 className="heading-xl">Ops, storytelling, and community in one rhythm.</h2>
-        </div>
-        <div className="grid gap-6 md:grid-cols-2">
-          {content.bento.map((tile) => (
-            <motion.article
-              key={tile.id}
-              className="glass-card flex h-full flex-col justify-between gap-5 rounded-[2.2rem] border border-white/12 bg-white/5 p-7 text-white"
-              initial={{ opacity: 0, y: 32 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-            >
-              <div className="space-y-3">
-                <span className="text-xs font-semibold uppercase tracking-[0.32em] text-white/60">{tile.eyebrow}</span>
-                <h3 className="heading-md text-white">{tile.title}</h3>
-                <p className="text-sm text-white/70">{tile.copy}</p>
-              </div>
-              <a
-                href={tile.href}
-                className="cta-muted inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-white/80"
-                onClick={() => trackEvent("cta_click_primary", { surface: "bento", id: tile.id })}
-              >
-                {tile.ctaLabel}
-              </a>
-            </motion.article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FAQSection({ content }: { content: LandingContent }) {
-  const [open, setOpen] = useState<string | null>(content.faq[0]?.question ?? null);
-  return (
-    <section id="faq" className="snap-none bg-[#f6f4f0] py-28 text-[#101815]">
-      <div className="section-shell grid gap-12 lg:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="space-y-5">
-          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[#4f5d58]">FAQ</span>
-          <h2 className="heading-xl text-[#101815]">Everything you need before you hit donate.</h2>
-        </div>
-        <div className="space-y-4">
-          {content.faq.map((item) => {
-            const isOpen = open === item.question;
-            return (
-              <motion.div key={item.question} className="rounded-3xl border border-[#101815]/12 bg-white p-6 shadow-[0_24px_56px_rgba(16,24,21,0.08)]" initial={false}>
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between text-left"
-                  onClick={() => setOpen(isOpen ? null : item.question)}
-                >
-                  <span className="heading-sm text-[#101815]">{item.question}</span>
-                  <motion.span animate={{ rotate: isOpen ? 45 : 0 }} className="text-2xl text-[#ff6f61]">
-                    +
-                  </motion.span>
-                </button>
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.p
-                      className="mt-4 text-sm text-[#4f5d58]"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.25, ease: "easeOut" }}
-                    >
-                      {item.answer}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FinalCTA({ content }: { content: LandingContent }) {
-  const { final } = content;
-  return (
-    <section id="donate" className="snap-none relative flex min-h-[100dvh] items-center overflow-hidden bg-[#0b1411]">
-      <div className="absolute -inset-[30%] bg-[radial-gradient(circle_at_center,#1d6e59_0%,transparent_58%)] opacity-35" />
-      <div className="hero-mask" />
-      <div className="section-shell relative z-10 grid gap-10 py-28 text-white lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-5">
-          <span className="inline-flex rounded-full border border-white/20 bg-white/5 px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-white/70">
-            {final.eyebrow}
+    <section id="community" className="snap-start bg-[#0a1116]">
+      <div className="section-shell flex flex-col gap-12 py-28 text-white">
+        <div className="max-w-3xl space-y-4">
+          <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+            {content.eyebrow}
           </span>
-          <h2 className="heading-xl">{final.headline}</h2>
-          <p className="max-w-xl text-sm text-white/75">{final.body}</p>
+          <h2 className="heading-xl">{content.title}</h2>
+          <p className="text-base text-white/75">{content.copy}</p>
         </div>
-        <div className="flex flex-col gap-4 self-end">
-          <MagneticButton
-            href={final.donateHref}
-            onHover={() => trackEvent("cta_click_primary", { surface: "final-hover" })}
-          >
-            {final.ctaLabel}
-          </MagneticButton>
-          <a href={final.secondaryHref} className="cta-muted inline-flex items-center justify-center text-xs uppercase tracking-[0.3em] text-white/75">
-            {final.secondaryLabel}
-          </a>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)]">
+          <div className="grid gap-4 md:grid-cols-2">
+            {content.posts.map((post) => (
+              <article key={post.id} className="glass-card flex flex-col gap-4 rounded-[2rem] border border-white/12 bg-[rgba(13,20,24,0.85)] p-5">
+                <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/55">
+                  <span>{post.author}</span>
+                  <span>{post.location}</span>
+                </div>
+                <Image src={post.image} alt={post.author} width={560} height={360} className="h-40 w-full rounded-[1.6rem] object-cover" />
+                <p className="text-sm text-white/70">“{post.quote}”</p>
+              </article>
+            ))}
+          </div>
+          <div className="flex flex-col gap-6">
+            <div className="glass-card space-y-4 rounded-[2rem] border border-white/12 bg-[rgba(13,20,24,0.85)] p-5">
+              <h3 className="text-lg font-semibold text-white">Anlık Etki Sayaçları</h3>
+              <ul className="space-y-3 text-sm text-white/65">
+                {content.metrics.map((metric) => (
+                  <li key={metric.id}>
+                    <span className="text-base font-semibold text-white">{metric.value}</span>
+                    <span className="block text-xs uppercase tracking-[0.3em] text-white/55">{metric.label}</span>
+                    <p className="text-xs text-white/55">{metric.caption}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="glass-card space-y-4 rounded-[2rem] border border-white/12 bg-[rgba(13,20,24,0.85)] p-5">
+              <h3 className="text-lg font-semibold text-white">Partner Klinikler & Sponsorlar</h3>
+              <div className="flex flex-wrap gap-3 text-xs uppercase tracking-[0.28em] text-white/60">
+                {content.partners.map((partner) => (
+                  <span key={partner.id} className="rounded-full border border-white/15 bg-white/10 px-4 py-2">{partner.label}</span>
+                ))}
+              </div>
+            </div>
+            <div className="glass-card space-y-3 rounded-[2rem] border border-white/12 bg-[rgba(13,20,24,0.85)] p-5 text-sm text-white/70">
+              <h3 className="text-lg font-semibold text-white">Şeffaflık Kayıtları</h3>
+              <ul className="space-y-2">
+                {content.transparency.map((item) => (
+                  <li key={item.id} className="flex items-center justify-between">
+                    <span>{item.label}</span>
+                    <span className="text-xs uppercase tracking-[0.3em] text-white/55">{item.value}</span>
+                  </li>
+                ))}
+              </ul>
+              <a href="/transparency" className="text-xs uppercase tracking-[0.3em] text-[#ff9b38]" onClick={() => trackEvent("cta_click_secondary", { surface: "transparency" })}>
+                Tüm raporları incele →
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-function StickyDonateDock({ label, href }: { label: string; href: string }) {
-  const [visible, setVisible] = useState(false);
-  const [progress, setProgress] = useState(0);
+function FinalCTA({ content }: { content: LandingContent["final"] }) {
+  const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    const handle = () => {
-      const doc = document.documentElement;
-      const height = doc.scrollHeight - window.innerHeight;
-      const ratio = height > 0 ? window.scrollY / height : 0;
-      setProgress(ratio);
-      setVisible(window.scrollY > window.innerHeight * 0.55);
-    };
-    handle();
-    window.addEventListener("scroll", handle, { passive: true });
-    return () => window.removeEventListener("scroll", handle);
-  }, []);
-
-  return (
-    <AnimatePresence>
-      {visible && (
-        <motion.aside
-          initial={{ opacity: 0, y: 56 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 56 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className="fixed bottom-6 left-1/2 z-[95] w-full max-w-[min(560px,calc(100%-2.5rem))] -translate-x-1/2 overflow-hidden rounded-full border border-white/10 bg-[rgba(11,15,13,0.9)] shadow-[0_30px_80px_rgba(6,10,9,0.65)] backdrop-blur lg:hidden"
-        >
-          <div className="flex items-center justify-between gap-4 px-5 py-4 text-white">
-            <div className="flex flex-col">
-              <span className="text-xs uppercase tracking-[0.3em] text-white/55">Donate</span>
-              <span className="text-sm font-semibold">{label}</span>
-            </div>
-            <MagneticButton href={href}>{label}</MagneticButton>
-          </div>
-          <div className="h-1 w-full bg-white/10">
-            <div className="h-full bg-white" style={{ width: `${Math.round(progress * 100)}%` }} />
-          </div>
-        </motion.aside>
-      )}
-    </AnimatePresence>
-  );
-}
-
-function QuickActionIcon({ icon }: { icon: HeroQuickAction["icon"] }) {
-  switch (icon) {
-    case "adopt":
-      return (
-        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
-          <path d="M4.5 12a3.5 3.5 0 1 1 6.8-1.2" />
-          <path d="M19.5 12a3.5 3.5 0 1 0-6.8-1.2" />
-          <path d="M5.4 14.5C6.5 17 9.9 19 12 19s5.5-2 6.6-4.5" strokeLinecap="round" />
-        </svg>
-      );
-    case "sponsor":
-      return (
-        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
-          <path d="M12 21c6-3.2 8-5.9 8-9.2a4.8 4.8 0 0 0-8-3.4 4.8 4.8 0 0 0-8 3.4C4 15.1 6 17.8 12 21Z" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      );
-    case "visit":
-      return (
-        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
-          <path d="M12 21c4.6-4.6 7-8.3 7-11.3A7 7 0 0 0 5 9.7C5 12.7 7.4 16.4 12 21Z" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="12" cy="9.7" r="2.3" />
-        </svg>
-      );
-    case "donate":
-    default:
-      return (
-        <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
-          <path d="M4 9h16v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9Z" />
-          <path d="M9 9V7a3 3 0 0 1 6 0v2" />
-        </svg>
-      );
-  }
-}
-
-function ExitIntentModal({
-  open,
-  onClose,
-  donateHref,
-  adoptionHref,
-  prefersReducedMotion,
-}: {
-  open: boolean;
-  onClose: () => void;
-  donateHref: string;
-  adoptionHref: string;
-  prefersReducedMotion: boolean;
-}) {
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-[rgba(6,10,9,0.72)] backdrop-blur"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "easeOut" }}
-          onClick={onClose}
-        >
-          <motion.div
-            className="glass-card relative max-w-lg rounded-[2.6rem] border border-white/12 bg-white/10 px-8 py-10 text-white"
-            initial={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0, y: prefersReducedMotion ? 0 : 24 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: prefersReducedMotion ? 1 : 0.92, opacity: 0, y: prefersReducedMotion ? 0 : 24 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease: "easeOut" }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="absolute right-6 top-6 text-white/60 transition hover:text-white"
-              onClick={onClose}
-              aria-label="Close reminder"
-            >
-              ×
-            </button>
-            <span className="text-xs font-semibold uppercase tracking-[0.32em] text-white/60">Wait—one last wag</span>
-            <h3 className="heading-md mt-4 text-white">Before you go, meet the dogs waiting on transport.</h3>
-            <p className="mt-3 text-sm text-white/70">
-              Two minutes to browse the adoption pack—or tap sponsor and keep meals coming while they wait.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <MagneticButton
-                href={adoptionHref}
-                onHover={() => trackEvent("cta_click_primary", { surface: "exit-intent-adopt" })}
-              >
-                Meet the Adoption Pack
-              </MagneticButton>
-              <button
-                type="button"
-                className="cta-muted text-xs uppercase tracking-[0.3em] text-white/70"
-                onClick={() => {
-                  trackEvent("cta_click_primary", { surface: "exit-intent-sponsor" });
-                  window.open(donateHref, "_blank");
-                }}
-              >
-                Sponsor Meals
-              </button>
-              <button
-                type="button"
-                className="cta-muted text-xs uppercase tracking-[0.3em] text-white/50"
-                onClick={onClose}
-              >
-                Maybe later
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-export function Landing({ content }: { content: LandingContent }) {
-  const prefersReducedMotion = usePrefersReducedMotion();
-  const [navSolid, setNavSolid] = useState(false);
-  const [exitIntentVisible, setExitIntentVisible] = useState(false);
-  const [exitIntentDismissed, setExitIntentDismissed] = useState(false);
-
-  const sponsorLabel = content.hero.quickActions.find((action) => action.icon === "sponsor")?.label ?? "Sponsor tonight's meals";
-
-  usePointerShift(prefersReducedMotion);
-  useSmoothScroll(prefersReducedMotion);
-
-  useEffect(() => {
-    const onScroll = () => setNavSolid(window.scrollY > 24);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-    const handleMouseLeave = (event: MouseEvent) => {
-      if (event.clientY <= 0 && !exitIntentDismissed) {
-        setExitIntentVisible(true);
-        trackEvent("exit_intent_shown", {});
-      }
-    };
-    window.addEventListener("mouseout", handleMouseLeave);
-    return () => window.removeEventListener("mouseout", handleMouseLeave);
-  }, [exitIntentDismissed, prefersReducedMotion]);
-
-  const closeExitModal = () => {
-    setExitIntentVisible(false);
-    setExitIntentDismissed(true);
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(content.primaryCta.href);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
+    } catch {
+      setCopied(false);
+    }
   };
 
   return (
+    <section id="share" className="snap-start relative flex min-h-[100dvh] items-center overflow-hidden bg-[#081015]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#2e8bc0_0%,transparent_62%)] opacity-25" aria-hidden />
+      <div className="section-shell relative z-10 grid gap-10 py-28 text-white lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="space-y-6">
+          <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.32em] text-white/70">
+            {content.eyebrow}
+          </span>
+          <h2 className="heading-xl">{content.title}</h2>
+          <p className="max-w-xl text-sm text-white/75">{content.copy}</p>
+          <div className="flex flex-wrap gap-3 pt-2">
+            <MagneticButton href={content.primaryCta.href} onHover={() => trackEvent("cta_click_primary", { surface: "final" })}>
+              {content.primaryCta.label}
+            </MagneticButton>
+            <a href={content.secondaryCta.href} className="cta-muted inline-flex items-center justify-center rounded-full px-6 py-3 text-xs uppercase tracking-[0.3em] text-white/75">
+              {content.secondaryCta.label}
+            </a>
+          </div>
+        </div>
+        <div className="glass-card flex flex-col gap-4 rounded-[2.4rem] border border-white/15 bg-[rgba(13,20,24,0.85)] p-6">
+          <h3 className="text-lg font-semibold text-white">Paylaş, hayat kurtar</h3>
+          <ul className="space-y-3 text-sm text-white/70">
+            {content.shares.map((share) => (
+              <li key={share.id}>
+                <a
+                  href={share.href}
+                  target={share.id === 'copy' ? '_self' : '_blank'}
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between rounded-2xl border border-white/15 bg-white/6 px-5 py-3 text-white/75 transition hover:border-white/40 hover:text-white"
+                  onClick={(event) => {
+                    if (share.id === 'copy') {
+                      event.preventDefault();
+                      onCopy();
+                    } else {
+                      trackEvent("cta_click_secondary", { surface: "share", id: share.id });
+                    }
+                  }}
+                >
+                  <span>{share.label}</span>
+                  <span className="text-xs uppercase tracking-[0.3em] text-white/55">{share.description}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          {copied && <p className="text-xs text-[#ff9b38]">Bağlantı panoya kopyalandı!</p>}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Footer({ content }: { content: LandingContent["footer"] }) {
+  return (
+    <footer className="border-t border-white/10 bg-[#070c10] py-12 text-white/65">
+      <div className="section-shell grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,280px)]">
+        <div className="space-y-3">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-sm font-semibold text-white">AH</span>
+          <p className="text-sm">{content.registration}</p>
+          <p className="text-sm">{content.address}</p>
+          <p className="text-sm">{content.email}</p>
+          <p className="text-sm">{content.phone}</p>
+        </div>
+        <div className="space-y-2 text-xs uppercase tracking-[0.32em] text-white/45">
+          <span>Topluluk</span>
+          <div className="flex flex-wrap gap-3">
+            {content.socials.map((social) => (
+              <a key={social.label} href={social.href} className="rounded-full border border-white/20 px-3 py-1 text-white/70 transition hover:border-white/40 hover:text-white">
+                {social.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function Landing({ content }: { content: LandingContent }) {
+  const prefersReducedMotion = usePrefersReducedMotion();
+  usePointerShift(prefersReducedMotion);
+  useSmoothScroll(prefersReducedMotion);
+
+  return (
     <main className="relative flex min-h-screen snap-y snap-mandatory flex-col text-white">
-      <Navigation content={content} solid={navSolid} />
-      <RailIndicators />
-      <Hero content={content} prefersReducedMotion={prefersReducedMotion} />
-      <USPStrip items={content.usp} />
-      <HowItWorks content={content} prefersReducedMotion={prefersReducedMotion} />
-      <Stories content={content} prefersReducedMotion={prefersReducedMotion} />
-      <AdoptionShowcase content={content.adoption} prefersReducedMotion={prefersReducedMotion} />
-      <Bento content={content} />
-      <TrustSection content={content.trust} prefersReducedMotion={prefersReducedMotion} />
-      <FAQSection content={content} />
-      <FinalCTA content={content} />
-      <FooterBar content={content.footer} />
-      <StickyDonateDock label={sponsorLabel} href={content.hero.donateHref} />
-      <ExitIntentModal
-        open={exitIntentVisible}
-        onClose={closeExitModal}
-        donateHref={content.hero.donateHref}
-        adoptionHref={content.hero.ctaHref}
-        prefersReducedMotion={prefersReducedMotion}
-      />
+      <Hero content={content.hero} prefersReducedMotion={prefersReducedMotion} />
+      <RescueJourney content={content.journey} prefersReducedMotion={prefersReducedMotion} />
+      <HopefulFaces content={content.faces} />
+      <DonationFlow content={content.donation} />
+      <RescueStories content={content.stories} prefersReducedMotion={prefersReducedMotion} />
+      <CommunitySpotlight content={content.community} />
+      <FinalCTA content={content.final} />
+      <Footer content={content.footer} />
     </main>
   );
 }
 
-const EN_CONTENT: LandingContent = {
+const landingContent: LandingContent = {
   hero: {
-    eyebrow: "Angels Haven • Adopt ↔ Sponsor",
-    headline: "Adopt. Sponsor. Keep rescue dogs safe tonight.",
-    subheadline: "Choose a companion ready to fly from Turkey or keep our rescue corridor funded with a micro-sponsor.",
-    summary: "Transparent timelines • DEFRA travel compliant • Weekly impact livestreams",
-    ctaLabel: "Meet the adoption pack",
-    ctaHref: "#adopt",
-    donateHref: CTA_PRIMARY,
-    donateAmounts: [1, 8, 25, 100],
-    defaultSelectionLabel: "Quick sponsor picks",
-    stats: {
-      label: "Homes matched this month",
-      value: 18,
-      suffix: "",
-    },
-    quickActions: [
-      {
-        id: "adopt-pack",
-        label: "Adopt from the pack",
-        caption: "Browse dogs cleared for travel",
-        href: "#adopt",
-        icon: "adopt",
-      },
-      {
-        id: "sponsor-meal",
-        label: "Sponsor tonight's meals",
-        caption: "£8 covers food & meds",
-        href: CTA_PRIMARY,
-        icon: "sponsor",
-      },
-      {
-        id: "plan-visit",
-        label: "Plan a sanctuary visit",
-        caption: "Meet the team or escort a flight",
-        href: "mailto:hello@angelshaven.org?subject=Sanctuary%20visit",
-        icon: "visit",
-      },
-    ],
+    eyebrow: "Sahne 0 • Empati",
+    headline: "Angels Haven Dijital Sığınağı",
+    subheadline: "Kurtarma hikâyesine adım attığınız an, endişe yerini umuda bırakır.",
+    description: "Türkiye'nin güney sahillerinden Avrupa'daki evlerine uzanan yolculukları canlı canlı izleyin. Her kaydırma, her dokunuş, bir canın hikâyesine güç olur.",
+    primaryCta: { label: "Bir Hikayeyi Değiştir", href: CTA_DONATE },
+    secondaryCta: { label: "Bir Kase Mama Gönder", href: CTA_DONATE },
     media: {
       poster: "/images/hero-poster.avif",
-      video: "/videos/hero-pack.mp4",
-      alt: "Group of rescue dogs looking down toward the camera",
+      video: "/videos/hero-ambient.mp4",
+      alt: "Kurtarılmış köpekler koşarken",
     },
-    liveCounter: {
-      label: "Families applying this week",
-      initial: 64,
-      minIncrement: 1,
-      maxIncrement: 3,
-      intervalMs: 7200,
-      suffix: "families",
+    stat: {
+      label: "Son 30 günde kurtarılan can",
+      value: 64,
+      suffix: "+",
     },
-    socialProof: [
-      {
-        id: "homecomings",
-        metric: "🏡 6 homecomings",
-        caption: "in the last 48 hours",
-        media: {
-          poster: "/images/story-mila.avif",
-          video: "/videos/community-loop.mp4",
-          alt: "Families greeting new rescue dogs",
-        },
-      },
-      { id: "members", metric: "💙 2,847 monthly", caption: "Sponsors on autopilot" },
-      { id: "rating", metric: "⭐ 4.9/5", caption: "Transparency rating" },
+    progress: {
+      label: "Acil mama fonu",
+      caption: "€9.600 hedefinin %72'si tamamlandı. Son 3 kasa uçuş için destek bekliyor.",
+      percent: 72,
+    },
+    donationOptions: [
+      { amount: 5, label: "Bir günlük mama" },
+      { amount: 29, label: "Bir haftalık bakım" },
+      { amount: 45, label: "Uçuş sandığı" },
     ],
-    urgency: {
-      remainingLabel: "Dogs cleared to fly",
-      remainingValue: "7",
-      goalLabel: "Flight fund 73% complete",
-      goalPercent: 73,
-      footer: "Sponsor final vet checks before Sunday night.",
-    },
-    recurringHint: "Set a monthly sponsor share so transport never pauses.",
     ticker: {
-      headline: "Recent supporters",
+      headline: "Topluluk Etkin",
       entries: [
-        { id: "sarah-lon", name: "Sarah L.", amount: 25, city: "London, UK", minutesAgo: 3, method: "Apple Pay" },
-        { id: "umit-izm", name: "Umit K.", amount: 8, city: "Izmir, TR", minutesAgo: 6, method: "Stripe" },
-        { id: "amelia-mcr", name: "Amelia R.", amount: 50, city: "Manchester, UK", minutesAgo: 9, method: "PayPal" },
-        { id: "cem-ank", name: "Cem A.", amount: 12, city: "Ankara, TR", minutesAgo: 12, method: "Visa" },
-        { id: "niamh-edi", name: "Niamh F.", amount: 100, city: "Edinburgh, UK", minutesAgo: 18, method: "Bank Transfer" },
-        { id: "melis-ist", name: "Melis D.", amount: 8, city: "Istanbul, TR", minutesAgo: 24, method: "Apple Pay" },
+        { id: "t1", donor: "Selin", amount: 29, city: "Berlin", minutesAgo: 3, method: "Apple Pay" },
+        { id: "t2", donor: "Max", amount: 45, city: "Amsterdam", minutesAgo: 7, method: "iDEAL" },
+        { id: "t3", donor: "Emma", amount: 12, city: "London", minutesAgo: 9, method: "PayPal" },
+        { id: "t4", donor: "Lukas", amount: 5, city: "Munich", minutesAgo: 11, method: "SEPA" },
+        { id: "t5", donor: "Chloé", amount: 29, city: "Paris", minutesAgo: 16, method: "Apple Pay" },
+        { id: "t6", donor: "Ekin", amount: 75, city: "Istanbul", minutesAgo: 20, method: "Kart" },
       ],
     },
   },
-  usp: [
-    "Adopt • Don’t Shop",
-    "Ready-to-fly pack",
-    "Monthly transparency",
-    "1-click sponsor checkout",
-  ],
-  steps: [
-    {
-      id: "choose",
-      badge: "Step 01",
-      title: "Choose your amount",
-      copy: "Start at £1 or set a custom gift. The live meter updates instantly as pledges stack.",
-      media: {
-        poster: "/images/step-choose.avif",
-        video: "/videos/step-choose.mp4",
-        alt: "Donation amount selector interface",
-      },
+  journey: {
+    intro: {
+      eyebrow: "Sahne 1 • Umut",
+      title: "Kurtarma Döngüsü dört duygusal vuruştan oluşur",
+      copy: "GSAP destekli kaydırmalı hikâye, ziyaretçiyi sorundan çözüme taşıyarak empatiyi harekete dönüştürür.",
     },
-    {
-      id: "pay",
-      badge: "Step 02",
-      title: "Pay securely in one tap",
-      copy: "Apple Pay, Google Pay, Stripe, and PayPal are wired into a single encrypted sheet—no account needed.",
-      media: {
-        poster: "/images/step-pay.avif",
-        video: "/videos/step-pay.mp4",
-        alt: "Secure checkout interface",
-      },
-    },
-    {
-      id: "impact",
-      badge: "Step 03",
-      title: "See the impact feed",
-      copy: "Follow daily footage, vet receipts, and GPS logs as your £1 moves from street rescue to foster home.",
-      media: {
-        poster: "/images/step-impact.avif",
-        video: "/videos/step-impact.mp4",
-        alt: "Impact dashboard",
-      },
-    },
-  ],
-  stories: [
-    {
-      id: "mila",
-      title: "Mila • Street to sofa in 14 days",
-      copy: "Found trembling in Fethiye. Micro-donations funded food, vaccinations, and a flight to her London foster.",
-      stat: "Day 14 • Foster placement confirmed",
-      media: {
-        before: { poster: "/images/story-before.png", alt: "Mila before rescue" },
-        after: { poster: "/images/story-mila.avif", alt: "Mila resting after rescue" },
-        clip: { poster: "/images/story-mila.avif", video: "/videos/story-mila.mp4", alt: "Mila video clip" },
-      },
-      ctaLabel: "Fund more recoveries",
-      ctaHref: CTA_PRIMARY,
-    },
-    {
-      id: "duman",
-      title: "Duman • Emergency care to trail runs",
-      copy: "Hit by traffic near Antalya. The community covered surgery, rehab, and relocation—he now runs Brighton trails.",
-      stat: "Day 28 • Cleared for adoption",
-      media: {
-        before: { poster: "/images/story-before.png", alt: "Duman before treatment" },
-        after: { poster: "/images/story-duman.avif", alt: "Duman running happily" },
-        clip: { poster: "/images/story-duman.avif", video: "/videos/story-duman.mp4", alt: "Duman video clip" },
-      },
-      ctaLabel: "Send the next meal",
-      ctaHref: CTA_PRIMARY,
-    },
-  ],
-  adoption: {
-    eyebrow: "Adopt • Don’t shop",
-    headline: "Ready-to-travel dogs waiting for a sofa.",
-    intro: "Our field team preps every rescue with behaviour notes, medical clearance, and DEFRA paperwork. Claim your match or keep their care funded until they fly home.",
-    cta: {
-      adopt: { label: "View adoption dossiers", href: "#adopt" },
-      sponsor: { label: "Sponsor the flight fund", href: CTA_PRIMARY },
-    },
-    pets: [
+    scenes: [
       {
-        id: "nova",
-        name: "Nova",
-        age: "2 yrs",
-        breed: "Anatolian mix",
-        temperament: "Gentle",
-        story: "Rescued from a beach café in Fethiye. Loves children, walks calmly on lead, and already crate trained.",
+        id: "scene-arrival",
+        badge: "1. Varış",
+        title: "Fethiye'de bir çağrı",
+        copy: "Yerel gönüllülerimiz gece yarısı yaralı bir köpek ihbarı aldığında zaman durur. İlk adım: göz teması kurup güven vermek.",
+        media: { poster: "/images/hero-rescue.png", video: "/videos/hero-pack.mp4", alt: "Gönüllüler yaralı köpeği kucaklıyor" },
+      },
+      {
+        id: "scene-care",
+        badge: "2. Müdahale",
+        title: "Sahada ilk yardım",
+        copy: "Altı saat içinde veteriner destek ekibi ulaşıyor. Mama, serum, pansuman… Tümü bağışçılarımız sayesinde hazır.",
+        media: { poster: "/images/step-impact.avif", video: "/videos/step-impact.mp4", alt: "Veteriner müdahalesi" },
+      },
+      {
+        id: "scene-rehab",
+        badge: "3. İyileşme",
+        title: "Rehabilitasyon ve sosyalizasyon",
+        copy: "Tedavi sonrası oyun seansları ve güven yeniden inşası. Empatiyi umutla bağlayan kritik aşama.",
+        media: { poster: "/images/step-choose.avif", video: "/videos/step-choose.mp4", alt: "Sahada oyun zamanı" },
+      },
+      {
+        id: "scene-home",
+        badge: "4. Yeni başlangıç",
+        title: "Havalimanından yeni ailesine",
+        copy: "Uçuş kasasına giren her pati, topluluğumuzun başarısıdır. Uçuş takibi, adaptasyon ve takip ekibimizle devam eder.",
+        media: { poster: "/images/step-pay.avif", video: "/videos/step-pay.mp4", alt: "Yeni ailesine kavuşan köpek" },
+      },
+    ],
+  },
+  faces: {
+    eyebrow: "Sahne 2 • Bağlantı",
+    title: "Umut Dolu Yüzler: Sponsor ol, ailesi ol",
+    copy: "10 köpeklik bento ızgarası her hafta yenilenir. Kartlara dokunun, yolculuklarını keşfedin, sponsor olun veya aile olun.",
+    cards: [
+      {
+        id: "luna",
+        name: "Luna",
+        age: "2 yaş",
+        personality: "Nazik ruh",
+        shortStory: "Kaş sahilinde bulundu. Sessiz öğleden sonraları sever, çocuklarla uyumlu.",
         image: "/images/story-mila.avif",
-        badge: "Ready to fly • 4 Oct",
-        medicalNotes: "Heartworm negative",
-        adoptHref: "mailto:adoptions@angelshaven.org?subject=Adopt%20Nova",
-        sponsorHref: CTA_PRIMARY,
+        badge: "Hazır • 4 Ekim",
+        sponsor: { monthly: 29, oneOff: 110, impact: "Aylık mama + vitamin + kum" },
       },
       {
-        id: "argo",
-        name: "Argo",
-        age: "18 mo",
-        breed: "Border collie mix",
-        temperament: "Playful",
-        story: "Pulled from an industrial estate in Izmir. Thrives with active families and adores agility-style games.",
+        id: "atlas",
+        name: "Atlas",
+        age: "18 ay",
+        personality: "Enerjik",
+        shortStory: "İzmir sanayi bölgesinden kurtarıldı. Agility parkurlarına bayılıyor.",
         image: "/images/story-duman.avif",
-        badge: "Escort needed • 12 Oct",
-        medicalNotes: "On joint supplements",
-        adoptHref: "mailto:adoptions@angelshaven.org?subject=Adopt%20Argo",
-        sponsorHref: CTA_PRIMARY,
+        badge: "Escort arıyor",
+        sponsor: { monthly: 35, oneOff: 150, impact: "Uçuş sandığı ve check-in ücretleri" },
       },
       {
-        id: "lale",
-        name: "Lale",
-        age: "3 yrs",
-        breed: "Golden retriever mix",
-        temperament: "Companion",
-        story: "Left behind after a market relocation. Velcro personality, already house-trained, perfect for first-time adopters.",
+        id: "maya",
+        name: "Maya",
+        age: "3 yaş",
+        personality: "Sarılgan",
+        shortStory: "Pazar yerinde terk edildi. İlk kez sıcak bir yatakta uyuyor.",
         image: "/images/story-after.png",
-        badge: "Foster-to-adopt • London",
-        medicalNotes: "Sensitive stomach",
-        adoptHref: "mailto:adoptions@angelshaven.org?subject=Adopt%20Lale",
-        sponsorHref: CTA_PRIMARY,
+        badge: "Foster İstanbul",
+        sponsor: { monthly: 25, oneOff: 90, impact: "Reçeteli mama + kontroller" },
+      },
+      {
+        id: "sarp",
+        name: "Sarp",
+        age: "4 yaş",
+        personality: "Koruyucu",
+        shortStory: "Çiftlikte zincirli bulundu. Güven kazanmak için zamana ihtiyacı var.",
+        image: "/images/story-before.png",
+        badge: "Davranış programı",
+        sponsor: { monthly: 32, oneOff: 120, impact: "Davranış terapisi" },
+      },
+      {
+        id: "peri",
+        name: "Peri",
+        age: "7 ay",
+        personality: "Oyuncu",
+        shortStory: "Yavruları ile birlikte kurtarıldı. Avrupa'da aile arıyor.",
+        image: "/images/story-mila.avif",
+        badge: "Yavru programı",
+        sponsor: { monthly: 19, oneOff: 70, impact: "Aşı + kısırlaştırma" },
+      },
+      {
+        id: "poyraz",
+        name: "Poyraz",
+        age: "5 yaş",
+        personality: "Sadık",
+        shortStory: "Bir restoranın arka bahçesinde yıllarca yaşadı. Şimdi yumuşak yataklardan ayrılmak istemiyor.",
+        image: "/images/story-duman.avif",
+        badge: "Yeni pasaport",
+        sponsor: { monthly: 28, oneOff: 130, impact: "Pasaport + mikroçip" },
+      },
+      {
+        id: "iris",
+        name: "İris",
+        age: "1,5 yaş",
+        personality: "Meraklı",
+        shortStory: "Fethiye çöplüğünden kurtarıldı. Tasmaya alışma sürecinde.",
+        image: "/images/story-after.png",
+        badge: "Rehber aile",
+        sponsor: { monthly: 24, oneOff: 95, impact: "Tasma eğitimi + mama" },
+      },
+      {
+        id: "milo",
+        name: "Milo",
+        age: "11 ay",
+        personality: "Sıcakkanlı",
+        shortStory: "Göcek'te tek başına dolaşıyordu. Çocuklarla harika anlaşıyor.",
+        image: "/images/story-mila.avif",
+        badge: "Foster Londra",
+        sponsor: { monthly: 27, oneOff: 105, impact: "Uçuş bileti katkısı" },
+      },
+      {
+        id: "asya",
+        name: "Asya",
+        age: "3 yaş",
+        personality: "Zeki",
+        shortStory: "Eğitim çiftliğinden transfer edildi. Komutları hızla öğreniyor.",
+        image: "/images/story-before.png",
+        badge: "Eğitim kampı",
+        sponsor: { monthly: 31, oneOff: 140, impact: "Clicker eğitimi" },
+      },
+      {
+        id: "yamo",
+        name: "Yamo",
+        age: "9 ay",
+        personality: "Neşeli",
+        shortStory: "Dalyan sazlığında bulundu. Suya atlamayı seviyor.",
+        image: "/images/story-duman.avif",
+        badge: "Yurt dışı hazır",
+        sponsor: { monthly: 30, oneOff: 125, impact: "Veteriner kontrolleri" },
       },
     ],
-    steps: [
+  },
+  donation: {
+    eyebrow: "Sahne 3 • Güçlenme",
+    title: "Etki simülatörü ile saniyeler içinde bağış",
+    copy: "Çok adımlı bağış formu, Apple/Google Pay ilk sırada ve şeffaf ücret mesajları ile dönüşümü artırır.",
+    options: [
+      { amount: 5, label: "Bir kâse mama", impact: "Bir günlük besleyici öğün" },
+      { amount: 29, label: "Bir haftalık bakım", impact: "Mama + vitamin + pansuman" },
+      { amount: 45, label: "Uçuş sandığı", impact: "DEFRA onaylı uçuş kasası" },
+    ],
+    feesLabel: "İşlem ücretini üstlen (%2.9 + €0.30)",
+    payments: ["Apple Pay", "Google Pay", "Stripe Kart", "PayPal", "SEPA / iDEAL"],
+    secureBadges: ["SSL 256-bit", "GDPR", "PCI-DSS"],
+  },
+  stories: {
+    eyebrow: "Sahne 4 • Aidiyet",
+    title: "Dayanıklılık hikâyeleri: Önce & Sonra",
+    copy: "Etik hikâye anlatımı ve kısa tanıklık videoları, bağışı topluluk aidiyetine dönüştürür.",
+    stories: [
       {
-        id: "01",
-        title: "Share your home checklist",
-        description: "Tell us about your family, other pets, and travel flexibility so we can recommend the right match.",
+        id: "mila",
+        title: "Mila • Fethiye kumsalından Londra koltuğuna",
+        copy: "24 saat içinde ameliyat, 21 gün rehabilitasyon. Destekçilerimiz sayesinde artık sıcak bir evde.",
+        stat: "Gün 21 • Uçuş ayarlandı",
+        media: {
+          before: { poster: "/images/story-before.png", alt: "Mila kurtarma öncesi" },
+          after: { poster: "/images/story-mila.avif", alt: "Mila yeni yuvasında" },
+          clip: { poster: "/images/story-mila.avif", video: "/videos/story-mila.mp4", alt: "Mila videosu" },
+        },
       },
       {
-        id: "02",
-        title: "Meet your dog virtually",
-        description: "We schedule a video briefing from the sanctuary with behaviour notes, vet reports, and travel timeline.",
-      },
-      {
-        id: "03",
-        title: "Flight + aftercare handled",
-        description: "We book DEFRA-compliant transport, escort the flight, and support integration for the first 30 days.",
+        id: "duman",
+        title: "Duman • Antalya otoyolundan Brighton parkına",
+        copy: "Topluluk fonu acil ameliyatı karşıladı. Şimdi her sabah koşu partneri.",
+        stat: "Gün 28 • Kalıcı aile onaylandı",
+        media: {
+          before: { poster: "/images/story-before.png", alt: "Duman kurtarma öncesi" },
+          after: { poster: "/images/story-duman.avif", alt: "Duman koşarken" },
+          clip: { poster: "/images/story-duman.avif", video: "/videos/story-duman.mp4", alt: "Duman videosu" },
+        },
       },
     ],
-    fallback: {
-      headline: "Not ready to adopt yet?",
-      copy: "Sponsor weekly food, medical top-ups, and travel crates so the pack stays safe until their family arrives.",
-      donateLabel: "Sponsor meals",
-      donateHref: CTA_PRIMARY,
-    },
   },
-  bento: [
-    {
-      id: "meals",
-      eyebrow: "Meals",
-      title: "2 tonnes of food monthly",
-      copy: "Logistics partners across Fethiye, Dalyan, and Izmir receive routed deliveries every 14 days.",
-      ctaLabel: "View route logs",
-      href: CTA_REPORT,
-    },
-    {
-      id: "emergency",
-      eyebrow: "Emergency",
-      title: "< 6 hr response time",
-      copy: "Alerts funnel to an ops lead who unlocks vet care, treatment, and medication in under six hours on average.",
-      ctaLabel: "See treatment receipts",
-      href: CTA_REPORT,
-    },
-    {
-      id: "sponsor",
-      eyebrow: "Sponsor",
-      title: "Sponsor a paw",
-      copy: "Recurring donors keep transports and foster flights funded—sponsor one dog’s journey each month.",
-      ctaLabel: "Sponsor now",
-      href: CTA_PRIMARY,
-    },
-    {
-      id: "report",
-      eyebrow: "Report",
-      title: "Transparency report",
-      copy: "Daily ops feed, monthly receipts, and compliance filings keep donors auditing in real time.",
-      ctaLabel: "Download report",
-      href: CTA_REPORT,
-    },
-  ],
-  faq: [
-    {
-      question: "Do I really see where £1 goes?",
-      answer: "Yes. Each donation unlocks live meal counts, vet receipts, and daily reels inside the impact feed.",
-    },
-    {
-      question: "Is checkout encrypted?",
-      answer: "We process via Stripe and PayPal with TLS 1.3, Apple Pay, Google Pay, and Radar fraud protection.",
-    },
-    {
-      question: "Can I pause recurring donations?",
-      answer: "Manage recurring gifts instantly inside your receipt—no forms or waiting periods required.",
-    },
-    {
-      question: "How fast does a rescue move?",
-      answer: "Emergency cases move from alert to funded treatment in under six hours on average, with timeline updates.",
-    },
-    {
-      question: "Will I receive a tax receipt?",
-      answer: "HMRC-compliant receipts hit your inbox instantly and roll up into a monthly statement for easy filing.",
-    },
-    {
-      question: "What happens after I donate?",
-      answer: "You join the private community feed, get behind-the-scenes drops, and can opt into flight volunteer missions.",
-    },
-  ],
-  final: {
-    eyebrow: "Ready to fund the next rescue?",
-    headline: "Make today a little safer for one dog.",
-    body: "£1 triggers food, treatment, and transport. Join the donors powering two tonnes of aid every month.",
-    ctaLabel: "£1 Feeds a Dog Today",
-    secondaryLabel: "Visit the community feed",
-    secondaryHref: CTA_COMMUNITY,
-    donateHref: CTA_PRIMARY,
-  },
-  trust: {
-    headline: "Proof we’re registered, audited, and on the ground.",
-    copy: "Angels Haven operates as a cross-border charity guided by UK governance and Turkish field partners. Every receipt, certificate, and safeguarding check is logged for donors.",
-    signals: [
+  community: {
+    eyebrow: "Sahne 5 • Topluluk",
+    title: "Mutlu Patiler duvarı",
+    copy: "Facebook topluluğumuz ve Instagram hashtag'i #AngelsHavenAilesi'nden canlı seçkiler.",
+    posts: [
       {
-        id: "registration",
-        title: "Charity Commission • #1204821",
-        detail: "Incorporated 12 Jan 2021 with dual-region mandate (England & Wales).",
-        proof: "Verified 2024 via Charity Commission public register.",
+        id: "post-1",
+        author: "@londonfosters",
+        location: "London, UK",
+        quote: "Nova ilk kez şehrin parkını keşfetti. Destekleriniz olmasa mümkün olmazdı!",
+        image: "/images/story-after.png",
       },
       {
-        id: "audit",
-        title: "Independent audit by Paws & Claws LLP",
-        detail: "Annual statements covering UK admin, TR field spend, and emergency reserves.",
-        proof: "FY23 review completed 08 Feb 2024—no exceptions raised.",
+        id: "post-2",
+        author: "Selin & Atlas",
+        location: "Berlin, DE",
+        quote: "Atlas artık evimizin en hızlı koşucusu. Uçuş fonuna katkı veren herkese minnettarız.",
+        image: "/images/story-duman.avif",
       },
       {
-        id: "safeguard",
-        title: "Full safeguarding + DBS clearance",
-        detail: "All volunteers, transport partners, and foster homes re-screened every 12 months.",
-        proof: "Compliance log accessible inside donor transparency portal.",
+        id: "post-3",
+        author: "Peri'nin Ailesi",
+        location: "Amsterdam, NL",
+        quote: "Peri'nin ilk mama kabı bağışlarınızla doldu. Şimdi sıra yeni oyuncaklarında!",
+        image: "/images/story-mila.avif",
       },
+      {
+        id: "post-4",
+        author: "Mutlu Patiler Grubu",
+        location: "İzmir, TR",
+        quote: "Bu hafta 3 yeni gönüllü katıldı. Hep birlikte daha güçlüyüz.",
+        image: "/images/story-before.png",
+      },
+    ],
+    partners: [
+      { id: "vetlink", label: "VetLink" },
+      { id: "nutri-paw", label: "NutriPaw" },
+      { id: "istanbulvet", label: "Istanbul Vet" },
+      { id: "petcargo", label: "PetCargo" },
+      { id: "empatia", label: "Empatia Clinic" },
+    ],
+    transparency: [
+      { id: "reg", label: "Dernek No", value: "34-204- AH" },
+      { id: "audit", label: "Son denetim", value: "Ağustos 2025" },
+      { id: "report", label: "Güncel rapor", value: "PDF" },
     ],
     metrics: [
-      { id: "meals", label: "Meals delivered", value: "2,184 / month", caption: "GPS-logged routes across Fethiye, Dalyan, Izmir." },
-      { id: "rehomed", label: "Dogs rehomed", value: "182", caption: "UK & EU placements since 2021 launch." },
-      { id: "rating", label: "Transparency rating", value: "4.9 / 5", caption: "Average donor review across Trustpilot + Google." },
+      { id: "meals", label: "Mama porsiyonu", value: "1.842", caption: "Son 30 günde dağıtıldı." },
+      { id: "adoptions", label: "Ev bulan can", value: "37", caption: "Bu çeyrekte aileye kavuştu." },
+      { id: "volunteers", label: "Aktif gönüllü", value: "112", caption: "Haftalık rapor veren gönüllü sayısı." },
     ],
-    accreditations: [
-      { id: "charity-commission", label: "UK Charity Commission", description: "Registered charity", href: "https://register-of-charities.charitycommission.gov.uk" },
-      { id: "hcvo", label: "Hackney CVS Member", description: "Community voluntary services", href: "https://hcvs.org.uk" },
-      { id: "defra", label: "DEFRA Transport License", description: "Pet travel compliance" },
+  },
+  final: {
+    eyebrow: "Sahne 6 • Paylaş",
+    title: "Paylaş, hayat kurtar",
+    copy: "Bağış sonrası teşekkür, viral döngü ve otomasyon daveti. Hikâyemizi tek dokunuşla yay.",
+    primaryCta: { label: "E-posta listesine katıl", href: "https://angelshaven.org/newsletter" },
+    secondaryCta: { label: "Topluluk rehberini indir", href: "https://angelshaven.org/guide.pdf" },
+    shares: [
+      {
+        id: "whatsapp",
+        label: "WhatsApp mesajı",
+        href: "https://api.whatsapp.com/send?text=Az%20%C3%B6nce%20Angels%20Haven'da%20bir%20hikayeyi%20de%C4%9Fi%C5%9Ftirdim.%20Sen%20de%20destek%20ol%3A%20https%3A%2F%2Fangelshaven.org",
+        description: "Tek tık",
+      },
+      {
+        id: "instagram",
+        label: "Instagram hikâye paketi",
+        href: "https://angelshaven.org/assets/instagram-pack.zip",
+        description: "İndir",
+      },
+      {
+        id: "copy",
+        label: "Bağlantıyı kopyala",
+        href: "https://angelshaven.org",
+        description: "Clipboard",
+      },
     ],
-    reviews: [
-      { id: "review-sarah", quote: "The only rescue that showed me vet bills within minutes of donating. That transparency kept me giving.", name: "Sarah J., London", role: "Monthly donor since 2022" },
-      { id: "review-levent", quote: "We escorted two dogs to Heathrow with their team—flawless logistics and welfare standards.", name: "Levent A., Izmir", role: "Volunteer flight guardian" },
-      { id: "review-maya", quote: "Our corporate CSR chose Angels Haven because their audits were ready before we even asked.", name: "Maya R., Bristol", role: "CSR Partnerships" },
-      { id: "review-hasan", quote: "Emergency cases get covered in hours thanks to the donor community—they saved Duman’s leg.", name: "Hasan T., Antalya", role: "Partner vet" },
-    ],
-    team: [
-      { id: "tulay", name: "Tulay Demir", role: "Founder & Field Ops", bio: "Former airline logistics lead now coordinating rescues and medical triage across Mugla." },
-      { id: "aaron", name: "Aaron Blake", role: "UK Programs & Compliance", bio: "Ex-Charity Commission analyst keeping filings, audits, and Gift Aid in check." },
-      { id: "seda", name: "Seda Yildiz", role: "Veterinary Partnerships", bio: "Manages 18-clinic network and ensures post-op care meets EU travel standards." },
-      { id: "leila", name: "Leila Khan", role: "Donor Experience", bio: "Runs livestreams, WhatsApp updates, and the transparency dashboard." },
-    ],
-    media: [
-      { id: "guardian", outlet: "The Guardian", href: "https://www.theguardian.com/uk", date: "Mar 2024", headline: "Micro-donations funding flights for Turkish rescues" },
-      { id: "bbc", outlet: "BBC Radio London", href: "https://www.bbc.co.uk/sounds", date: "Jan 2024", headline: "Angels Haven’s night missions across Istanbul" },
-      { id: "wired", outlet: "WIRED Impact", href: "https://www.wired.co.uk", date: "Nov 2023", headline: "How transparency dashboards rebuild donor trust" },
-    ],
-    contact: [
-      { label: "Email", value: "verify@angelshaven.org", href: "mailto:verify@angelshaven.org" },
-      { label: "Phone", value: "+44 20 7946 0958", href: "tel:+442079460958" },
-      { label: "HQ", value: "18 Market Walk, Islington, London N1 7SR" },
-      { label: "TR Ops", value: "Calis Mah. 112. Sokak No:4, Fethiye / Mugla" },
-    ],
-    proofDocument: {
-      label: "Download due diligence pack",
-      href: CTA_REPORT,
-      description: "Registration certificates, safeguarding policy, transport insurance, and FY23 audit letter.",
-    },
   },
   footer: {
-    registration: "Charity Commission for England & Wales No. 1204821",
-    address: "18 Market Walk, Islington, London N1 7SR • Ops hub: Calis Mah. 112. Sokak No:4, Fethiye / Mugla",
-    email: "support@angelshaven.org",
-    phone: "+44 20 7946 0958",
-    hours: "Phone lines: Mon–Sat 08:00–20:00 GMT",
+    registration: "Angels Haven • Kayıtlı Yardım Kuruluşu • Vergi No: AH-934-2025",
+    address: "Karagözler Mah. No:12, Fethiye / Muğla",
+    email: "hello@angelshaven.org",
+    phone: "+90 533 000 00 00",
     socials: [
-      { label: "Instagram", href: "https://instagram.com/angelshavenpaws" },
+      { label: "Instagram", href: "https://instagram.com/angelshaven" },
+      { label: "Facebook Grubu", href: "https://www.facebook.com/groups/480707493946285" },
+      { label: "TikTok", href: "https://tiktok.com/@angelshaven" },
       { label: "YouTube", href: "https://youtube.com/@angelshaven" },
-      { label: "TikTok", href: "https://www.tiktok.com/@angelshaven" },
-      { label: "LinkedIn", href: "https://linkedin.com/company/angelshaven" },
-    ],
-    policies: [
-      { label: "Privacy", href: "/privacy" },
-      { label: "Terms", href: "/terms" },
-      { label: "Impact Report", href: CTA_REPORT },
-    ],
-    legal: [
-      { label: "About", href: "/about" },
-      { label: "Transparency", href: "/transparency" },
-      { label: "Press", href: "/press" },
     ],
   },
 };
 
 export default function Home() {
-  return <Landing content={EN_CONTENT} />;
+  return <Landing content={landingContent} />;
 }

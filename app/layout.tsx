@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Inter, Bricolage_Grotesque } from "next/font/google";
+import { Manrope, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const structuredData = {
@@ -39,16 +39,16 @@ const structuredData = {
   "taxID": "1204821"
 };
 
-const inter = Inter({
-  variable: "--font-inter",
+const manrope = Manrope({
+  variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
 });
 
-const display = Bricolage_Grotesque({
-  variable: "--font-display",
+const playfair = Playfair_Display({
+  variable: "--font-heading",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -80,9 +80,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} ${display.variable} bg-background text-foreground antialiased`}
-      >
+      <body className={`${manrope.variable} ${playfair.variable} bg-background text-foreground antialiased`}>
         <Script id="ms-clarity" strategy="afterInteractive">
           {`(function(c,l,a,r,i,t,y){
   c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
